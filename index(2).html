@@ -1,0 +1,3479 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#111111" />
+  <title>VENTURE INFO — 100 Companies Quarry</title>
+  <meta name="description" content="企業を採掘する、探索型ベンチャーデータベースのデモ。" />
+  <style>
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --black: #11110f;
+  --ink: #211b14;
+  --cream: #f5efe4;
+  --paper: #fbf7ef;
+  --gold: #c99a2e;
+  --gold-dark: #8d6413;
+  --line: rgba(74, 55, 27, .15);
+  --muted: #7b7063;
+  --grass-1: #8fd850;
+  --grass-2: #69b83d;
+  --sky-1: #6bc5ee;
+  --sky-2: #b9e6f6;
+  --soil-1: #b97b3b;
+  --soil-2: #8d562c;
+  --soil-3: #613a23;
+  --soil-4: #3b261b;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--cream);
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--cream);
+  font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.topbar {
+  height: 72px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #0d0e0d;
+  color: #fff;
+  display: grid;
+  grid-template-columns: 280px 1fr 420px;
+  align-items: center;
+  padding: 0 28px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.brand {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  color: #111;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #d5af4a, #9e731d);
+  font-size: 24px;
+}
+
+.brand strong {
+  display: block;
+  color: #e2b646;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  letter-spacing: .06em;
+}
+
+.brand small {
+  display: block;
+  margin-top: 2px;
+  color: rgba(255,255,255,.64);
+  font-size: 9px;
+  letter-spacing: .13em;
+}
+
+.nav {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+
+.nav-item {
+  position: relative;
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,.7);
+  padding: 0 25px;
+  font-weight: 700;
+}
+
+.nav-item.active {
+  color: #e2b646;
+}
+
+.nav-item.active::after {
+  content: "";
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 0;
+  height: 3px;
+  background: #d9aa35;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.search {
+  width: min(310px, 100%);
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search input {
+  min-width: 0;
+  width: 100%;
+  color: white;
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+
+.icon-btn,
+.avatar {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(216,169,52,.6);
+  color: #e2b646;
+  background: transparent;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  align-items: start;
+}
+
+.quarry-panel {
+  min-width: 0;
+  border-right: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.hero-sky {
+  position: relative;
+  height: 310px;
+  overflow: hidden;
+  background: linear-gradient(var(--sky-1), var(--sky-2));
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 34px 44px 0;
+}
+
+.eyebrow {
+  margin: 0 0 7px;
+  color: var(--gold-dark);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.hero-copy h1,
+.collection-head h2,
+.company-dialog h2,
+.filter-dialog h2 {
+  margin: 0;
+  color: #17130f;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.hero-copy h1 {
+  font-size: 35px;
+  font-weight: 500;
+}
+
+.hero-copy p:not(.eyebrow) {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.soft-btn {
+  border: 1px solid rgba(134,96,25,.35);
+  background: rgba(255,255,255,.68);
+  color: #805a13;
+  padding: 12px 17px;
+  border-radius: 8px;
+  backdrop-filter: blur(6px);
+}
+
+.soft-btn.small {
+  padding: 9px 12px;
+  font-size: 11px;
+}
+
+.industry-ruler {
+  position: absolute;
+  z-index: 8;
+  left: 4%;
+  right: 4%;
+  bottom: 58px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: rgba(250,247,239,.86);
+  border: 1px solid rgba(78,57,27,.13);
+  border-radius: 10px;
+  box-shadow: 0 9px 25px rgba(30, 25, 17, .07);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.industry-ruler button {
+  border: 0;
+  border-right: 1px solid rgba(78,57,27,.1);
+  background: transparent;
+  padding: 13px 8px;
+  color: #342b20;
+  font-size: 12px;
+  transition: .2s ease;
+}
+
+.industry-ruler button:last-child {
+  border-right: 0;
+}
+
+.industry-ruler button:hover,
+.industry-ruler button.active {
+  color: #7e5a12;
+  background: rgba(205,158,47,.14);
+}
+
+.grass {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 52px;
+  background:
+    radial-gradient(circle at 16% 30%, rgba(255,239,120,.9) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 48%, rgba(255,244,167,.8) 0 2px, transparent 3px),
+    linear-gradient(0deg, var(--grass-2), var(--grass-1));
+  box-shadow: inset 0 -8px 0 rgba(68,135,31,.18);
+}
+
+.grass::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -9px;
+  height: 18px;
+  background:
+    radial-gradient(12px 14px at 8px 0, #6eb63f 56%, transparent 59%) 0 0/22px 16px repeat-x;
+}
+
+.flower {
+  position: absolute;
+  color: #fff7ae;
+  font-size: 12px;
+}
+
+.f1 { left: 16%; top: 12px; }
+.f2 { left: 55%; top: 20px; }
+.f3 { left: 83%; top: 10px; }
+
+.mountains {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: 45px;
+  height: 100px;
+  opacity: .38;
+  clip-path: polygon(0 100%, 7% 70%, 13% 85%, 19% 52%, 25% 81%, 33% 60%, 42% 88%, 50% 45%, 58% 82%, 67% 58%, 75% 85%, 83% 52%, 90% 77%, 100% 42%, 100% 100%);
+}
+
+.m1 { background: #317aa2; }
+.m2 {
+  transform: translateY(22px) scaleX(1.13);
+  background: #4f9db5;
+  opacity: .32;
+}
+
+.cloud {
+  position: absolute;
+  width: 115px;
+  height: 32px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.72);
+  filter: blur(.2px);
+}
+
+.cloud::before,
+.cloud::after {
+  content: "";
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+}
+
+.cloud::before {
+  width: 48px;
+  height: 48px;
+  left: 20px;
+  top: -19px;
+}
+
+.cloud::after {
+  width: 62px;
+  height: 62px;
+  right: 16px;
+  top: -31px;
+}
+
+.c1 { top: 116px; left: -25px; transform: scale(.75); }
+.c2 { top: 84px; right: 15%; transform: scale(.58); opacity: .6; }
+.c3 { top: 145px; left: 40%; transform: scale(.44); opacity: .5; }
+
+.mine-wrap {
+  position: relative;
+  background: #2d1e16;
+}
+
+.depth-rail {
+  position: absolute;
+  z-index: 14;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 82px;
+  pointer-events: none;
+  color: rgba(255,255,255,.83);
+  background: linear-gradient(90deg, rgba(20,15,12,.8), rgba(20,15,12,.26), transparent);
+}
+
+.depth-rail strong {
+  position: sticky;
+  top: 88px;
+  display: block;
+  padding: 16px 0 0 18px;
+  color: #e5bf5a;
+  font-size: 10px;
+  letter-spacing: .14em;
+}
+
+.depth-rail span {
+  position: absolute;
+  left: 18px;
+  font-size: 11px;
+  text-shadow: 0 1px 3px black;
+}
+
+.rail-line {
+  position: absolute;
+  top: 28px;
+  bottom: 20px;
+  left: 65px;
+  width: 1px;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(239,195,78,.8) 0 3px,
+    transparent 3px 10px
+  );
+}
+
+.mine-stage {
+  position: relative;
+  height: 2050px;
+  overflow: hidden;
+  outline: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.mine-underlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 6%, rgba(201,154,46,.07) 0 70px, transparent 72px),
+    radial-gradient(circle at 72% 48%, rgba(201,154,46,.06) 0 90px, transparent 92px),
+    linear-gradient(#1f1712, #0f0e0c 80%);
+}
+
+.zone-lines {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+}
+
+.zone-lines i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(255,255,255,.035) 12%, rgba(255,255,255,.035) 88%, transparent);
+}
+
+.ore-layer {
+  position: absolute;
+  z-index: 12;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ore {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  transform: translate(-50%, -50%);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+.ore.revealed {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.ore-stone {
+  width: 54px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 44% 56% 53% 47% / 45% 49% 51% 55%;
+  color: #fff2c8;
+  font-size: 19px;
+  font-weight: 900;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.26), transparent 35%),
+    linear-gradient(145deg, #d4a43a, #7d5517 78%);
+  border: 1px solid rgba(255,223,134,.55);
+  box-shadow: 0 8px 25px rgba(0,0,0,.35), inset 0 0 0 3px rgba(0,0,0,.12);
+}
+
+.ore[data-industry="SaaS"] .ore-stone { filter: saturate(.55) brightness(.95); }
+.ore[data-industry="FinTech"] .ore-stone { filter: hue-rotate(15deg) saturate(.8); }
+.ore[data-industry="ヘルスケア"] .ore-stone { filter: hue-rotate(305deg) saturate(.55) brightness(1.1); }
+.ore[data-industry="宇宙・防衛"] .ore-stone { filter: grayscale(.55) brightness(.9); }
+.ore[data-industry="物流・運輸"] .ore-stone { filter: hue-rotate(175deg) saturate(.35); }
+.ore[data-industry="エネルギー"] .ore-stone { filter: hue-rotate(55deg) saturate(.7); }
+
+.ore-label {
+  position: absolute;
+  left: 50px;
+  top: 50%;
+  min-width: 150px;
+  transform: translateY(-50%);
+  padding: 9px 10px;
+  color: #1d1711;
+  text-align: left;
+  background: rgba(248,240,224,.95);
+  border: 1px solid rgba(118,82,22,.24);
+  border-radius: 7px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.18);
+}
+
+.ore-label strong,
+.ore-label small {
+  display: block;
+}
+
+.ore-label strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 13px;
+}
+
+.ore-label small {
+  margin-top: 3px;
+  color: #6f6252;
+  font-size: 9px;
+}
+
+#digCanvas {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+.dig-hint {
+  position: sticky;
+  z-index: 11;
+  top: 42vh;
+  width: 170px;
+  margin: 0 auto;
+  padding: 16px;
+  text-align: center;
+  color: white;
+  border-radius: 12px;
+  background: rgba(24,18,13,.74);
+  border: 1px solid rgba(255,255,255,.18);
+  pointer-events: none;
+  backdrop-filter: blur(7px);
+}
+
+.dig-hint.hidden {
+  opacity: 0;
+}
+
+.dig-icon {
+  display: block;
+  font-size: 30px;
+  color: #edc04f;
+}
+
+.dig-hint strong,
+.dig-hint small {
+  display: block;
+}
+
+.dig-hint strong {
+  color: #e5b845;
+}
+
+.dig-hint small {
+  margin-top: 4px;
+  opacity: .8;
+  font-size: 10px;
+}
+
+.depth-float,
+.industry-float {
+  position: fixed;
+  z-index: 50;
+  display: none;
+  pointer-events: none;
+  background: rgba(17,17,15,.92);
+  color: #fff;
+  border: 1px solid rgba(207,160,47,.5);
+  border-radius: 6px;
+  padding: 6px 9px;
+  font-size: 10px;
+}
+
+.industry-float {
+  transform: translateY(30px);
+  color: #e7bd51;
+}
+
+.status-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: 1.25fr 1.25fr .9fr .9fr 1.15fr;
+  gap: 1px;
+  border-top: 1px solid var(--line);
+  background: #e8dfd1;
+}
+
+.status-card {
+  min-height: 108px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 18px 22px;
+  background: rgba(250,247,239,.94);
+  backdrop-filter: blur(14px);
+}
+
+.status-card.compact {
+  display: block;
+  padding-top: 27px;
+}
+
+.status-card small,
+.metric-grid small,
+.capability-box small {
+  display: block;
+  color: #7b6e5d;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.status-card strong {
+  display: block;
+  margin-top: 4px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+}
+
+.status-icon {
+  color: #b9871f;
+  font-size: 25px;
+}
+
+.meter {
+  width: 150px;
+  max-width: 100%;
+  height: 4px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #d4ccbf;
+}
+
+.meter i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #d9aa34, #141412);
+}
+
+.black-btn {
+  border: 0;
+  background: #11110f;
+  color: #e4b947;
+  font-weight: 800;
+  letter-spacing: .03em;
+  padding: 0 18px;
+}
+
+.black-btn:hover {
+  background: #242118;
+}
+
+.black-btn.full {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 22px;
+  border-radius: 7px;
+}
+
+.collection-panel {
+  position: sticky;
+  top: 72px;
+  height: calc(100vh - 72px);
+  overflow: auto;
+  padding: 30px 24px;
+  background: linear-gradient(135deg, #fbf7ee, #f2eadf);
+}
+
+.collection-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.collection-head h2 {
+  font-size: 25px;
+  font-weight: 500;
+}
+
+.collection-head h2 span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 99px;
+  background: #11110f;
+  color: #e3b746;
+  font: 12px/1 Arial, sans-serif;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.collection-tabs {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+
+.chip {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: #5e5346;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+}
+
+.chip.active {
+  color: #8a6113;
+  background: #fffaf0;
+  border-color: rgba(174,123,23,.45);
+}
+
+.collection-list {
+  display: grid;
+  gap: 12px;
+}
+
+.empty-state {
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  text-align: center;
+  color: #74695b;
+  border: 1px dashed rgba(110,81,38,.18);
+  border-radius: 12px;
+}
+
+.empty-state strong {
+  color: #2d251d;
+  margin: 12px 0 0;
+}
+
+.empty-state p {
+  max-width: 220px;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.empty-icon {
+  font-size: 42px;
+  color: #c79b3c;
+}
+
+.company-card {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding: 15px;
+  background: rgba(255,255,255,.55);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.company-logo {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: #111;
+  color: #e2b646;
+  border-radius: 7px;
+  font: 600 18px/1 Georgia, serif;
+}
+
+.company-card h3 {
+  margin: 2px 0 4px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+}
+
+.company-card p {
+  margin: 0 0 8px;
+  color: #6d6255;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.tags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.tags span {
+  padding: 5px 7px;
+  background: #efe5d4;
+  color: #75591f;
+  border-radius: 5px;
+  font-size: 8px;
+}
+
+.card-remove {
+  border: 0;
+  background: transparent;
+  color: #ad7b1d;
+  font-size: 18px;
+}
+
+.company-dialog,
+.filter-dialog {
+  width: min(540px, calc(100vw - 32px));
+  border: 1px solid rgba(93,66,24,.22);
+  border-radius: 14px;
+  padding: 30px;
+  color: #221a13;
+  background: #fbf6ec;
+  box-shadow: 0 30px 100px rgba(0,0,0,.3);
+}
+
+.company-dialog::backdrop,
+.filter-dialog::backdrop {
+  background: rgba(0,0,0,.56);
+  backdrop-filter: blur(5px);
+}
+
+.dialog-close {
+  position: absolute;
+  right: 15px;
+  top: 12px;
+  border: 0;
+  background: transparent;
+  color: #6e6255;
+  font-size: 24px;
+}
+
+.dialog-kicker {
+  color: #a7791d;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.company-dialog h2,
+.filter-dialog h2 {
+  margin-top: 6px;
+  font-size: 34px;
+  font-weight: 500;
+}
+
+.company-dialog > p {
+  color: #655a4e;
+  line-height: 1.75;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 22px 0;
+}
+
+.metric-grid > div {
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255,255,255,.55);
+}
+
+.metric-grid strong {
+  display: block;
+  margin-top: 7px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+}
+
+.capability-box {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.capability-box .tags {
+  margin-top: 10px;
+}
+
+.confidence-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  color: #716457;
+  font-size: 12px;
+}
+
+.confidence-row strong {
+  color: #9a6f18;
+}
+
+.field {
+  display: grid;
+  gap: 10px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+
+.field span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.field select {
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 7px;
+}
+
+.toast {
+  position: fixed;
+  z-index: 300;
+  left: 50%;
+  bottom: 30px;
+  transform: translate(-50%, 20px);
+  padding: 11px 16px;
+  color: white;
+  background: rgba(17,17,15,.95);
+  border: 1px solid rgba(222,174,57,.45);
+  border-radius: 7px;
+  opacity: 0;
+  pointer-events: none;
+  transition: .25s ease;
+  font-size: 12px;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (max-width: 1100px) {
+  .topbar {
+    grid-template-columns: 230px 1fr 70px;
+  }
+
+  .search {
+    display: none;
+  }
+
+  .app-shell {
+    grid-template-columns: 1fr 300px;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 840px) {
+  .topbar {
+    height: 64px;
+    padding: 0 14px;
+    grid-template-columns: 1fr auto;
+  }
+
+  .brand strong { font-size: 16px; }
+  .brand small { display: none; }
+  .nav { display: none; }
+  .top-actions .icon-btn { display: none; }
+
+  .app-shell {
+    display: block;
+  }
+
+  .collection-panel {
+    position: relative;
+    top: 0;
+    height: auto;
+    border-top: 1px solid var(--line);
+  }
+
+  .hero-sky {
+    height: 285px;
+  }
+
+  .hero-copy {
+    padding: 24px 18px 0;
+  }
+
+  .hero-copy h1 {
+    font-size: 29px;
+  }
+
+  .industry-ruler {
+    left: 12px;
+    right: 12px;
+    bottom: 54px;
+    overflow-x: auto;
+    grid-template-columns: repeat(7, minmax(104px, 1fr));
+  }
+
+  .industry-ruler button {
+    white-space: nowrap;
+  }
+
+  .mine-stage {
+    height: 1700px;
+  }
+
+  .status-bar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .status-card.compact,
+  .black-btn {
+    min-height: 76px;
+  }
+
+
+  .depth-rail {
+    width: 64px;
+  }
+
+  .rail-line {
+    left: 50px;
+  }
+
+  .depth-rail span,
+  .depth-rail strong {
+    left: 10px;
+    padding-left: 0;
+  }
+
+  .ore-label {
+    display: none;
+  }
+}
+
+
+/* --- Major company research UI --- */
+.company-dialog-wide {
+  width: min(860px, calc(100vw - 34px));
+  max-height: min(88vh, 920px);
+  overflow: auto;
+}
+
+.company-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  align-items: flex-start;
+  padding-right: 34px;
+}
+
+.company-hero > div:first-child {
+  min-width: 0;
+}
+
+.company-hero p {
+  margin: 10px 0 0;
+  color: #655a4e;
+  line-height: 1.75;
+}
+
+.save-top {
+  min-width: 180px;
+  min-height: 44px;
+  border-radius: 7px;
+  flex: 0 0 auto;
+}
+
+.snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+  margin: 24px 0 20px;
+}
+
+.snapshot-card {
+  min-height: 92px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(255,255,255,.58);
+}
+
+.snapshot-card small {
+  display: block;
+  margin-bottom: 8px;
+  color: #877969;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.snapshot-card strong {
+  display: block;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.snapshot-card span {
+  display: block;
+  margin-top: 6px;
+  color: #7d7060;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.detail-tabs {
+  position: sticky;
+  top: -30px;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  margin: 0 -30px;
+  padding: 0 30px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(251,246,236,.96);
+  backdrop-filter: blur(14px);
+}
+
+.detail-tab {
+  position: relative;
+  border: 0;
+  background: transparent;
+  padding: 15px 7px;
+  color: #746757;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.detail-tab.active {
+  color: #815d13;
+}
+
+.detail-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 13px;
+  right: 13px;
+  bottom: -1px;
+  height: 2px;
+  background: #c99a2e;
+}
+
+.detail-body {
+  padding: 22px 0 8px;
+}
+
+.detail-summary {
+  margin: 0 0 18px;
+  color: #41372d;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.fact-list {
+  display: grid;
+  gap: 9px;
+}
+
+.fact-row {
+  display: grid;
+  grid-template-columns: 150px 1fr auto;
+  gap: 14px;
+  align-items: start;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(75,55,27,.1);
+}
+
+.fact-row:last-child {
+  border-bottom: 0;
+}
+
+.fact-label {
+  color: #7a6d5c;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+
+.fact-value {
+  color: #241d16;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.source-pill {
+  white-space: nowrap;
+  padding: 4px 7px;
+  border-radius: 99px;
+  background: #eee4d2;
+  color: #8c681d;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.source-pill.official {
+  background: #181712;
+  color: #e0b44a;
+}
+
+.source-pill.ir {
+  background: #e7dcc7;
+  color: #6c511b;
+}
+
+.source-pill.third {
+  background: #eee9df;
+  color: #72695e;
+}
+
+.sources-panel {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.source-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.source-heading small {
+  display: block;
+  color: #9b731f;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.source-heading strong {
+  display: block;
+  margin-top: 4px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+}
+
+.source-heading > span {
+  color: #8a7b69;
+  font-size: 9px;
+}
+
+.source-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.source-link {
+  display: block;
+  padding: 11px 12px;
+  color: #33291f;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255,255,255,.48);
+}
+
+.source-link:hover {
+  border-color: rgba(178,126,25,.45);
+  background: #fffaf0;
+}
+
+.source-link strong {
+  display: block;
+  font-size: 10px;
+}
+
+.source-link span {
+  display: block;
+  margin-top: 4px;
+  color: #817464;
+  font-size: 8px;
+}
+
+.data-note {
+  margin: 18px 0 0;
+  color: #8a7c6c;
+  font-size: 9px;
+  line-height: 1.7;
+}
+
+@media (max-width: 720px) {
+  .company-hero {
+    display: block;
+  }
+
+  .save-top {
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  .snapshot-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .detail-tabs {
+    overflow-x: auto;
+    grid-template-columns: repeat(5, minmax(110px, 1fr));
+  }
+
+  .fact-row {
+    grid-template-columns: 105px 1fr;
+  }
+
+  .source-pill {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .source-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   Physical digging interaction v2
+   ========================================================= */
+
+#digCanvas {
+  cursor: default;
+  pointer-events: none;
+}
+
+.mine-stage {
+  cursor: default;
+  touch-action: pan-y;
+}
+
+.dig-hint {
+  width: 205px;
+  transition: opacity .25s ease;
+}
+
+.soil-physics-layer {
+  position: absolute;
+  z-index: 18;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.soil-clod {
+  position: absolute;
+  width: var(--size);
+  height: calc(var(--size) * .72);
+  transform: translate(-50%, -50%) rotate(var(--rot));
+  border-radius: 44% 56% 57% 43% / 49% 43% 57% 51%;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.14), transparent 34%),
+    var(--clod);
+  box-shadow: inset 0 -2px 3px rgba(0,0,0,.18);
+  will-change: transform, left, top, opacity;
+}
+
+.shovel-tool {
+  --shovel-angle: 7deg;
+  position: fixed;
+  z-index: 220;
+  left: 0;
+  top: 0;
+  width: 58px;
+  height: 166px;
+  transform: translate(-50%, 0) rotate(var(--shovel-angle));
+  transform-origin: 50% 10px;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  filter: drop-shadow(0 9px 8px rgba(0,0,0,.24));
+  will-change: left, top, transform;
+}
+
+.shovel-tool.holding {
+  cursor: grabbing;
+}
+
+.shovel-tool.grabbed {
+  filter: drop-shadow(0 12px 10px rgba(0,0,0,.33));
+}
+
+.shovel-grip {
+  position: absolute;
+  left: 11px;
+  top: 0;
+  width: 36px;
+  height: 27px;
+  border: 7px solid #1c1814;
+  border-bottom-width: 6px;
+  border-radius: 16px 16px 11px 11px;
+  background: #b4823f;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.12);
+}
+
+.shovel-shaft {
+  position: absolute;
+  left: 26px;
+  top: 23px;
+  width: 7px;
+  height: 108px;
+  border-radius: 5px;
+  background:
+    linear-gradient(90deg, #72502d, #d4a05e 44%, #8b5e31 100%);
+  box-shadow: 1px 0 0 rgba(255,255,255,.16), -1px 0 2px rgba(0,0,0,.2);
+}
+
+.shovel-collar {
+  position: absolute;
+  left: 21px;
+  top: 122px;
+  width: 17px;
+  height: 13px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #5f5f5b, #c3c2b9 48%, #62625e);
+}
+
+.shovel-blade {
+  position: absolute;
+  left: 12px;
+  top: 130px;
+  width: 34px;
+  height: 36px;
+  clip-path: polygon(13% 0, 87% 0, 100% 58%, 50% 100%, 0 58%);
+  background:
+    linear-gradient(110deg, #63635f 0%, #d1d0c8 47%, #7a7973 69%, #4b4b48 100%);
+  border-radius: 3px 3px 11px 11px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+}
+
+.shovel-tool::after {
+  content: "";
+  position: absolute;
+  left: 26px;
+  top: 160px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(233,185,66,.95);
+  opacity: 0;
+  box-shadow: 0 0 0 7px rgba(233,185,66,.14);
+  transition: opacity .15s ease;
+}
+
+.shovel-tool.grabbed::after {
+  opacity: 1;
+}
+
+.shovel-dock-label {
+  position: fixed;
+  z-index: 219;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, 175px);
+  padding: 6px 8px;
+  color: #8e6618;
+  background: rgba(250,246,236,.92);
+  border: 1px solid rgba(126,91,24,.2);
+  border-radius: 99px;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(0,0,0,.08);
+  transition: opacity .2s ease;
+}
+
+.shovel-dock-label.hidden {
+  opacity: 0;
+}
+
+.mine-stage.shovel-active::after {
+  content: "上からのみ採掘できます";
+  position: sticky;
+  z-index: 17;
+  top: 18px;
+  float: right;
+  margin: 18px 18px 0 0;
+  padding: 8px 10px;
+  color: #e6ba4a;
+  background: rgba(17,17,15,.82);
+  border: 1px solid rgba(231,187,75,.26);
+  border-radius: 7px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  pointer-events: none;
+}
+
+.impact-flash {
+  position: absolute;
+  z-index: 19;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: #e1b14a;
+  box-shadow:
+    0 0 0 8px rgba(225,177,74,.15),
+    0 0 0 15px rgba(225,177,74,.05);
+  animation: impactFlash .32s ease-out forwards;
+}
+
+@keyframes impactFlash {
+  from { opacity: 1; transform: translate(-50%,-50%) scale(.5); }
+  to   { opacity: 0; transform: translate(-50%,-50%) scale(2.2); }
+}
+
+@media (max-width: 840px) {
+  .shovel-tool {
+    transform: translate(-50%, 0) rotate(var(--shovel-angle)) scale(.9);
+  }
+
+  .shovel-dock-label {
+    transform: translate(-50%, 158px);
+  }
+}
+
+
+/* =========================================================
+   v3 polish — white industry signboards / no text selection
+   ========================================================= */
+
+/* Industry labels become individual white signboards. */
+.industry-ruler {
+  left: 3%;
+  right: 3%;
+  bottom: 56px;
+  gap: 10px;
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.industry-ruler button {
+  position: relative;
+  min-height: 46px;
+  padding: 10px 8px 12px;
+  color: #2a231c;
+  background: rgba(255,255,255,.96);
+  border: 1px solid rgba(83,61,28,.18) !important;
+  border-radius: 7px;
+  box-shadow:
+    0 8px 18px rgba(40,31,20,.12),
+    inset 0 1px 0 rgba(255,255,255,.9);
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.industry-ruler button::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -17px;
+  width: 3px;
+  height: 17px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: #745232;
+  box-shadow: 8px 0 0 #745232;
+}
+
+.industry-ruler button:hover,
+.industry-ruler button.active {
+  color: #8b6417;
+  background: #fffdfa;
+  border-color: rgba(177,126,25,.5) !important;
+  transform: translateY(-2px);
+}
+
+.industry-ruler button.active {
+  box-shadow:
+    0 10px 20px rgba(40,31,20,.14),
+    inset 0 0 0 2px rgba(204,156,46,.18);
+}
+
+/* Prevent accidental text/image selection while using the shovel. */
+.shovel-tool,
+.shovel-tool *,
+.mine-stage,
+.mine-stage *,
+body.dragging-shovel,
+body.dragging-shovel * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+body.dragging-shovel {
+  cursor: grabbing !important;
+}
+
+/* Energy system removed: remaining status blocks share the bar evenly. */
+.status-bar {
+  grid-template-columns: 1.25fr .9fr .9fr;
+}
+
+@media (max-width: 840px) {
+  .industry-ruler {
+    left: 10px;
+    right: 10px;
+    gap: 8px;
+    grid-template-columns: repeat(6, minmax(108px, 1fr)) !important;
+  }
+
+  .status-bar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .status-bar > *:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+
+/* v4 — expanded 37-company universe */
+.industry-ruler {
+  grid-template-columns: repeat(9, minmax(88px, 1fr)) !important;
+}
+
+.industry-ruler button {
+  font-size: 10px;
+}
+
+@media (max-width: 1180px) {
+  .industry-ruler {
+    overflow-x: auto;
+    grid-template-columns: repeat(9, minmax(112px, 1fr)) !important;
+    padding-bottom: 20px;
+  }
+}
+
+/* 100-company GitHub refresh */
+.detail-tabs { grid-template-columns: repeat(6, 1fr); }
+.industry-ruler { grid-template-columns: repeat(9, minmax(92px, 1fr)) !important; }
+.status-bar { grid-template-columns: 1.25fr .9fr .9fr !important; }
+@media (max-width: 840px) {
+  .detail-tabs { grid-template-columns: repeat(6, minmax(108px, 1fr)); overflow-x:auto; }
+}
+
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="VENTURE INFO home">
+      <span class="brand-mark">◇</span>
+      <span>
+        <strong>VENTURE INFO</strong>
+        <small>DISCOVER. DIG. INVEST.</small>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Primary">
+      <button class="nav-item active" data-nav="quarry">採掘場</button>
+      <button class="nav-item" data-nav="collection">コレクション</button>
+      <button class="nav-item" data-nav="report">レポート</button>
+    </nav>
+
+    <div class="top-actions">
+      <label class="search">
+        <span>⌕</span>
+        <input id="globalSearch" type="search" placeholder="企業名・キーワードで検索…" />
+      </label>
+      <button class="icon-btn" id="resetBtn" title="デモをリセット" aria-label="デモをリセット">↻</button>
+      <button class="avatar" aria-label="Profile">H</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="quarry-panel" id="quarryView">
+      <div class="hero-sky">
+        <div class="cloud c1"></div>
+        <div class="cloud c2"></div>
+        <div class="cloud c3"></div>
+
+        <div class="hero-copy">
+          <div>
+            <p class="eyebrow">VENTURE DISCOVERY FIELD</p>
+            <h1>採掘場</h1>
+            <p>地中を掘り進めて、日本の大手100社を発掘し、給料・福利厚生・働き方・キャリアを比較しよう。</p>
+          </div>
+          <button class="soft-btn" id="openFilterBtn">⌁ フィルター</button>
+        </div>
+
+        <div class="industry-ruler" id="industryRuler" aria-label="Industry zones"></div>
+
+        <div class="mountains m1"></div>
+        <div class="mountains m2"></div>
+        <div class="grass">
+          <span class="flower f1">✦</span>
+          <span class="flower f2">✦</span>
+          <span class="flower f3">✦</span>
+        </div>
+      </div>
+
+      <div class="mine-wrap" id="mineWrap">
+        <aside class="depth-rail" aria-hidden="true">
+          <strong>深度</strong>
+          <span style="top:5%">0 m</span>
+          <span style="top:24%">-250 m</span>
+          <span style="top:43%">-500 m</span>
+          <span style="top:62%">-750 m</span>
+          <span style="top:81%">-1000 m</span>
+          <span style="top:96%">-1250 m</span>
+          <i class="rail-line"></i>
+        </aside>
+
+        <div class="mine-stage" id="mineStage" tabindex="0" aria-label="採掘エリア。クリックまたはタップで掘れます。">
+          <div class="mine-underlay"></div>
+          <div class="zone-lines" id="zoneLines"></div>
+          <div class="ore-layer" id="oreLayer"></div>
+          <canvas id="digCanvas"></canvas>
+          <div class="soil-physics-layer" id="soilPhysicsLayer"></div>
+
+          <div class="dig-hint" id="digHint">
+            <span class="dig-icon">↧</span>
+            <strong>シャベルを長押し</strong>
+            <small>持ち上げて、地表へ向かって刺す</small>
+          </div>
+
+          <div class="depth-float" id="depthFloat">0 m</div>
+          <div class="industry-float" id="industryFloat">AI・機械学習</div>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-card">
+          <span class="status-icon">⛏</span>
+          <div>
+            <small>DIG POWER</small>
+            <strong>Lv. <span id="levelValue">1</span></strong>
+            <div class="meter"><i id="xpMeter"></i></div>
+          </div>
+        </div>
+        <div class="status-card compact">
+          <small>DISCOVERED</small>
+          <strong><span id="discoveredValue">0</span> 社</strong>
+        </div>
+        <div class="status-card compact">
+          <small>DEEPEST</small>
+          <strong><span id="deepestValue">0</span> m</strong>
+        </div>
+      </div>
+    </section>
+
+    <aside class="collection-panel" id="collectionPanel">
+      <div class="collection-head">
+        <div>
+          <p class="eyebrow">MY FINDINGS</p>
+          <h2>コレクション <span id="collectionCount">0</span></h2>
+        </div>
+        <button class="soft-btn small" id="clearCollectionBtn">CLEAR</button>
+      </div>
+
+      <p class="muted">気になった企業をここに保存して比較できます。</p>
+
+      <div class="collection-tabs">
+        <button class="chip active" data-filter="ALL">すべて</button>
+        <button class="chip" data-filter="AI・機械学習">AI</button>
+        <button class="chip" data-filter="SaaS">SaaS</button>
+        <button class="chip" data-filter="FinTech">FinTech</button>
+        <button class="chip" data-filter="ヘルスケア">Healthcare</button>
+      </div>
+
+      <div class="collection-list" id="collectionList">
+        <div class="empty-state">
+          <div class="empty-icon">◇</div>
+          <strong>まだ企業がありません</strong>
+          <p>地中を掘って、最初の企業を発見しましょう。</p>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+<dialog class="company-dialog company-dialog-wide" id="companyDialog">
+    <button class="dialog-close" id="dialogClose" aria-label="閉じる">×</button>
+
+    <div class="company-hero">
+      <div>
+        <div class="dialog-kicker" id="dialogIndustry">TECH</div>
+        <h2 id="dialogName">Company</h2>
+        <p id="dialogSummary"></p>
+      </div>
+      <button class="black-btn save-top" id="saveCompanyBtn">コレクションに保存</button>
+    </div>
+
+    <div class="snapshot-grid" id="snapshotGrid"></div>
+
+    <div class="detail-tabs" id="detailTabs">
+      <button class="detail-tab active" data-detail="compensation">給料・評価</button>
+      <button class="detail-tab" data-detail="benefits">福利厚生</button>
+      <button class="detail-tab" data-detail="stability">経営安定性</button>
+      <button class="detail-tab" data-detail="culture">社風・人間関係</button>
+      <button class="detail-tab" data-detail="workstyle">働き方</button>
+      <button class="detail-tab" data-detail="career">成長・キャリア</button>
+    </div>
+
+    <section class="detail-body" id="detailBody"></section>
+
+    <section class="sources-panel">
+      <div class="source-heading">
+        <div>
+          <small>DATA PROVENANCE</small>
+          <strong>出典</strong>
+        </div>
+        <span>公式情報を優先</span>
+      </div>
+      <div id="dialogSources" class="source-list"></div>
+    </section>
+
+    <p class="data-note">
+      ※ 社風・人間関係のうち、社員の人柄や部署単位の実態は公式資料だけでは十分に観測できないため、
+      本デモでは断定せず「未評価」としています。
+    </p>
+  </dialog>
+
+<dialog class="filter-dialog" id="filterDialog">
+    <button class="dialog-close" id="filterClose" aria-label="閉じる">×</button>
+    <p class="eyebrow">EXPLORATION FILTER</p>
+    <h2>採掘条件</h2>
+    <p class="muted">鉱石として出現する企業を業界で絞り込みます。</p>
+    <label class="field">
+      <span>業界</span>
+      <select id="industryFilter">
+        <option value="ALL">すべての業界</option>
+      </select>
+    </label>
+    <button class="black-btn full" id="applyFilterBtn">フィルターを適用</button>
+  </dialog>
+
+  <div class="shovel-dock-label" id="shovelDockLabel">HOLD TO GRAB</div>
+  <div class="shovel-tool" id="shovelTool" aria-label="シャベル。長押しして持つ">
+    <div class="shovel-grip"></div>
+    <div class="shovel-shaft"></div>
+    <div class="shovel-collar"></div>
+    <div class="shovel-blade"></div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+const industries = [
+  "テック・メディア",
+  "総合商社",
+  "メーカー・DX",
+  "IT・SI",
+  "人材・Platform",
+  "通信",
+  "自動車",
+  "金融",
+  "消費財・小売"
+];
+
+const detailedCompanies = [
+  {
+    name: "Sony Group",
+    displayName: "ソニーグループ",
+    industry: "テック・メディア",
+    depth: 145,
+    summary: "エンタテインメント、ゲーム、イメージング、半導体など複数の事業を持つ大手企業。就活情報では、ジョブグレード制と柔軟な働き方の公開情報が比較的豊富。",
+    snapshot: [
+      ["学部初任給", "33.3万円", "2026年度予定"],
+      ["平均残業", "22.2h/月", "ソニーグループ(株) 2024年度"],
+      ["有給取得率", "63.7%", "ソニーグループ(株) 2024年度"],
+      ["売上高", "12.48兆円", "FY2025"]
+    ],
+    details: {
+      compensation: {
+        summary: "年功よりも役割・実績を重視するジョブグレード型。新卒の学歴別初任給と業績給が公開されている。",
+        facts: [
+          ["初任給", "学部卒 333,000円／月、修士了 363,000円／月、博士了 383,000円／月（2026年度予定）", "公式"],
+          ["賞与・業績給", "業績給 年1回", "公式"],
+          ["昇給・評価", "ジョブグレード制。年功ではなく、個人の役割・実績に応じて給与を改定。役割が大きく変わる場合は随時見直し。", "公式"],
+          ["主な福利厚生", "確定拠出年金、退職金、持株会、カフェテリアプラン、独身寮、子育て支援等。", "公式"]
+        ]
+      },
+      stability: {
+        summary: "単一事業ではなく、ゲーム・音楽・映画・エレクトロニクス・半導体など複数の収益源を持つ点が特徴。",
+        facts: [
+          ["売上高", "12兆4,796億円（FY2025）", "IR"],
+          ["営業利益", "1兆4,475億円（FY2025）", "IR"],
+          ["営業利益率", "11.6%（FY2025）", "IR"],
+          ["安定性を見る視点", "事業ポートフォリオの分散と高収益事業の構成を、単年度の売上だけでなく複数年で確認するのが有効。", "分析"]
+        ]
+      },
+      culture: {
+        summary: "公開資料からは『個』と多様性を重視する制度設計が読み取れる。ただし、部署ごとの人間関係や上司との相性は公式データでは観測できない。",
+        facts: [
+          ["評価の考え方", "役割と実績を基礎とするジョブグレード制。", "公式"],
+          ["キャリアの公平性", "新卒入社者と経験者入社者で、役職・評価・処遇に差異を設けないと説明。", "公式"],
+          ["社員の人柄", "公式データのみでは未評価。社員インタビューや第三者レビューを別レイヤーで扱うべき項目。", "未評価"]
+        ]
+      },
+      workstyle: {
+        summary: "コアタイムなしフレックスやテレワーク制度が整備され、労働時間・有給の実績値も公開されている。",
+        facts: [
+          ["フレックス", "コアタイムなしのフレックスタイム制。", "公式"],
+          ["年間休日", "126日（2026年度）", "公式"],
+          ["年次有給", "平均14.2日、取得率63.7%（ソニーグループ(株) 2024年度）", "公式"],
+          ["平均残業", "22.2時間／月（ソニーグループ(株) 2024年度）", "公式"],
+          ["柔軟な働き方", "国内グループのフレキシブルワーク制度導入率93.9%（2024年度）", "公式"]
+        ]
+      },
+      career: {
+        summary: "制度としては専門性を伸ばす選択肢が多く、研修投資やキャリア休職制度も公開されている。",
+        facts: [
+          ["人材育成投資", "社員1人あたり20.3万円（ソニーグループ(株) 2024年度）", "公式"],
+          ["研修", "国内外で多数の研修プログラムを運用。", "公式"],
+          ["キャリア制度", "私費就学や配偶者の海外赴任等に対応するフレキシブルキャリア休職制度あり。", "公式"]
+        ]
+      }
+    },
+    sources: [
+      ["新卒採用 募集要項", "公式", "https://www.sony.com/ja/SonyInfo/Jobs/sgc-recruit/newgrads/info/"],
+      ["Sustainability Report 2025", "公式", "https://www.sony.com/ja/SonyInfo/csr/library/reports/SustainabilityReport2025_J.pdf"],
+      ["FY2025 決算説明資料", "IR", "https://www.sony.com/ja/SonyInfo/IR/library/presen/er/pdf/25q4_sonypre.pdf"]
+    ]
+  },
+
+  {
+    name: "ITOCHU",
+    displayName: "伊藤忠商事",
+    industry: "総合商社",
+    depth: 245,
+    summary: "総合商社。初任給、平均年収、残業、有給取得率、評価制度まで比較的細かく公開されており、就活データの可視化と相性が良い。",
+    snapshot: [
+      ["学部初任給", "36.0万円", "総合職・試用期間後"],
+      ["平均残業", "約10h/月", "2025年度"],
+      ["有給取得率", "71%", "2025年度"],
+      ["平均年収", "約1,991万円", "2026年3月末"]
+    ],
+    details: {
+      compensation: {
+        summary: "成果連動色が強く、固定給・個人業績・会社業績を組み合わせる報酬設計。",
+        facts: [
+          ["初任給", "総合職：大卒 360,000円／月、院卒 400,000円／月。試用期間中は大卒340,000円、院卒375,000円。", "公式"],
+          ["賞与", "年2回。業績に連動。", "公式"],
+          ["平均年間給与", "19,911,534円（単体・2026年3月末時点の開示）", "公式"],
+          ["評価制度", "MBOによる個人業績評価と会社業績を変動給に反映。固定給は役割・職責・能力等を踏まえて決定。", "公式"],
+          ["メリハリ", "2025年の制度改訂では、最も高い成果を挙げた社員の個人賞与を標準的評価の社員の約4倍とする方針を公表。", "公式"]
+        ]
+      },
+      stability: {
+        summary: "利益水準、ROE、キャッシュフロー等をIRで確認できる。商社は資源価格や投資案件の影響も大きいため、単純な売上だけでは見ない方がよい。",
+        facts: [
+          ["連結純利益", "9,003億円（2026年3月期）", "IR"],
+          ["実質営業CF", "9,400億円（2026年3月期）", "IR"],
+          ["ROE", "15%（2026年3月期）", "IR"],
+          ["平均勤続年数", "17年9か月（2025年度・単体）", "公式"]
+        ]
+      },
+      culture: {
+        summary: "公式には『厳しくとも働きがいのある会社』を掲げ、成果に応じた処遇と経営参画意識を強く打ち出している。",
+        facts: [
+          ["従業員エンゲージメント", "肯定的回答率71%（2025年度）", "公式"],
+          ["評価文化", "成果に応じたメリハリのある評価・報酬を明示。", "公式"],
+          ["社員の人柄", "公式資料だけでは未評価。OB/OG訪問や第三者レビューを別途確認する必要あり。", "未評価"]
+        ]
+      },
+      workstyle: {
+        summary: "朝型勤務で有名だが、現在は朝型フレックスタイム制度として運用。労働時間の実績も公開。",
+        facts: [
+          ["勤務制度", "朝型フレックス。コアタイム9:00〜15:00、始業5:00〜9:00、終業15:00〜20:00。", "公式"],
+          ["標準勤務時間", "7時間15分", "公式"],
+          ["平均残業", "約10時間／月（2025年度）", "公式"],
+          ["有給取得率", "71%（2025年度）", "公式"],
+          ["勤務地", "入社時は東京・横浜予定。その後は国内・海外全域。", "公式"]
+        ]
+      },
+      career: {
+        summary: "若手の早期抜擢や事業会社経営経験を含む、経営人材育成を前面に出している。",
+        facts: [
+          ["MBO", "毎年度の目標設定・中間レビュー・期末レビューを実施。", "公式"],
+          ["早期抜擢", "年功的要素を弱め、若手・中堅の早期抜擢を進める制度改訂を実施。", "公式"],
+          ["経営経験", "30歳前後で事業会社の経営者としてマネジメント経験を積むことを可能にする仕組みを公表。", "公式"]
+        ]
+      }
+    },
+    sources: [
+      ["2027年度 新卒募集要項", "公式", "https://career.itochu.co.jp/student/information/index.html"],
+      ["ESGデータ", "公式", "https://www.itochu.co.jp/ja/csr/data/index.html"],
+      ["人材育成・人事評価制度", "公式", "https://www.itochu.co.jp/ja/csr/society/development/index.html"],
+      ["IR 業績ハイライト", "IR", "https://www.itochu.co.jp/ja/ir/"]
+    ]
+  },
+
+  {
+    name: "Hitachi",
+    displayName: "日立製作所",
+    industry: "メーカー・DX",
+    depth: 420,
+    summary: "IT・OT・プロダクトを横断する社会イノベーション企業。新卒採用を全面的にジョブベースへ移行しており、職種とキャリアの対応が比較的明確。",
+    snapshot: [
+      ["学部初任給", "28.7万円", "2026年4月実績"],
+      ["初年度理論年収", "約530万円", "学部卒"],
+      ["賞与", "年2回", "6月・12月"],
+      ["売上収益", "9.78兆円", "2024年度"]
+    ],
+    details: {
+      compensation: {
+        summary: "一律処遇より、職務の役割・責任に基づくジョブベースの処遇へ移行。",
+        facts: [
+          ["初任給", "学部卒 287,000円／月、修士課程卒 312,000円／月（2026年4月実績）", "公式"],
+          ["初年度理論年収", "学部卒 約530万円、修士卒 約580万円。", "公式"],
+          ["賞与", "年2回（6月・12月）", "公式"],
+          ["評価・処遇", "非管理職層も『職務の役割・責任』をベースとした処遇制度へ移行。", "公式"]
+        ]
+      },
+      stability: {
+        summary: "社会インフラ、IT、エネルギー、モビリティ、産業領域を広く持つ。DXとLumadaを成長軸にしている。",
+        facts: [
+          ["売上収益", "9兆7,833億円（2024年度／2025年3月期）", "公式"],
+          ["従業員規模", "全世界で約28万人（2025年3月末の説明資料）", "公式"],
+          ["事業構成", "デジタルシステム&サービス、エナジー、モビリティ、コネクティブインダストリーズ等。", "公式"]
+        ]
+      },
+      culture: {
+        summary: "公式資料からは、専門性とジョブのマッチングを重視する方向が明確。人間関係の実態は別途確認が必要。",
+        facts: [
+          ["採用思想", "全ての新卒応募をジョブベースへ移行し、希望職種と会社のマッチングを重視。", "公式"],
+          ["社員との接点", "ジョブリクルーターやキャリア相談機会を拡充。", "公式"],
+          ["社員の人柄", "公式資料のみでは未評価。", "未評価"]
+        ]
+      },
+      workstyle: {
+        summary: "職務に応じてフレックスや裁量労働制度を利用できる。",
+        facts: [
+          ["フレックス", "フレックスタイム制度あり。適用は職務内容等に基づき個別決定。", "公式"],
+          ["裁量労働", "対象職務では裁量労働制度あり。", "公式"],
+          ["勤務地", "職種・ポジションごとに異なるため、応募するジョブ単位で確認する設計が合理的。", "分析"]
+        ]
+      },
+      career: {
+        summary: "『どの会社に入るか』より『どのジョブを選ぶか』を前面に出す採用設計。",
+        facts: [
+          ["ジョブ型採用", "2026年度採用計画で新卒の全応募をジョブベースへ完全移行。", "公式"],
+          ["職種選択", "ポジション選択型／職種選択型を用意し、内定時点で配属や職種を確約するケースあり。", "公式"],
+          ["ジョブ型インターン", "職場体験型インターンを拡大し、キャリアとのミスマッチ低減を狙う。", "公式"]
+        ]
+      }
+    },
+    sources: [
+      ["新卒採用 募集要項", "公式", "https://www.hitachi.com/ja-jp/recruit/opportunities/newgraduate/"],
+      ["2026年度 採用計画", "公式", "https://www.hitachi.com/ja-jp/press/articles/2025/02/0227a/"],
+      ["2027年度 採用計画", "公式", "https://www.hitachi.co.jp/New/cnews/month/2026/03/0302a.pdf"]
+    ]
+  },
+
+  {
+    name: "NTT DATA",
+    displayName: "NTT DATA",
+    industry: "IT・SI",
+    depth: 560,
+    summary: "国内外でITサービスを展開する大手。初任給、住宅補助、フレックス、有給取得率など、就活で比較したい項目を比較的細かく公開。",
+    snapshot: [
+      ["学部初任給", "30.0万円", "グレード6"],
+      ["有給取得率", "79.8%", "2024年度"],
+      ["有給取得", "15.5日", "2024年度"],
+      ["売上高", "5.00兆円", "2025年度"]
+    ],
+    details: {
+      compensation: {
+        summary: "入社時グレードで給与差があり、専門性が認められると高いグレードでの採用が可能。",
+        facts: [
+          ["初任給", "グレード6：学士卒300,000円、修士312,000円。グレード5は322,540円（2026年4月予定額）。", "公式"],
+          ["賞与", "年2回（6月・12月）", "公式"],
+          ["住宅補助", "首都圏・独身・35歳以下の場合 42,500円／月など、条件別に制度あり。", "公式"],
+          ["評価の特徴", "専門性の判定により入社時グレードが変わる仕組み。", "公式"]
+        ]
+      },
+      stability: {
+        summary: "グローバルITサービスとして売上5兆円規模。2025年にはNTTによる完全子会社化に伴い上場廃止となっている。",
+        facts: [
+          ["売上高", "5兆46億円（2025年度）", "IR"],
+          ["営業利益", "4,882億円（2025年度）", "IR"],
+          ["営業利益率", "9.8%（2025年度）", "IR"],
+          ["資本関係", "2025年9月に上場廃止。NTTグループ内での位置づけを含めて見る必要あり。", "IR"]
+        ]
+      },
+      culture: {
+        summary: "公開資料ではワークライフバランスや労使対話など制度面が確認できる。部署ごとの人柄は別データが必要。",
+        facts: [
+          ["労使対話", "労働条件に関わる事項について労使協議を実施すると説明。", "公式"],
+          ["社員の人柄", "公式データのみでは未評価。", "未評価"],
+          ["見るべき追加データ", "案件規模、客先常駐比率、職種別の働き方などは部署差が大きいため、配属単位で確認するとよい。", "分析"]
+        ]
+      },
+      workstyle: {
+        summary: "フレックス、裁量労働、住宅支援、有給取得実績が公開されている。",
+        facts: [
+          ["フレックス", "フレキシブルタイム5:00〜10:00／15:00〜22:00、コアタイム10:00〜12:00／13:00〜15:00。", "公式"],
+          ["有給取得", "平均15.5日／人、取得率79.8%（2024年度）", "公式"],
+          ["リモート", "リモートワーク手当あり。", "公式"],
+          ["標準勤務時間", "1日7時間30分", "公式"]
+        ]
+      },
+      career: {
+        summary: "専門性を入社時から評価する仕組みがあり、IT・デジタル領域でスキルを積み上げるキャリアと相性がよい。",
+        facts: [
+          ["専門性評価", "学会発表や修士論文等の証跡を確認し、専門性が認められた場合は上位グレードで入社可能。", "公式"],
+          ["育成", "配属領域に応じた専門研修・資格支援などを確認する価値が高い。", "分析"]
+        ]
+      }
+    },
+    sources: [
+      ["新卒採用 募集要項", "公式", "https://nttdata-recruit.com/recruit/requirements.html"],
+      ["Sustainability Report 2025", "公式", "https://www.nttdata.com/global/ja/-/media/nttdataglobal-ja/files/sustainability/report/library/2025/sr2025db_all_jp.pdf"],
+      ["2025年度 決算説明資料", "IR", "https://www.nttdata.com/global/ja/-/media/nttdataglobal-ja/files/investors/ir_events/2025/4q/20264qpre_j01.pdf"],
+      ["IR情報", "IR", "https://www.nttdata.com/global/ja/investors/"]
+    ]
+  },
+
+  {
+    name: "Recruit",
+    displayName: "リクルート",
+    industry: "人材・Platform",
+    depth: 750,
+    summary: "人材、住宅、美容、飲食、学習など多様なマッチング・プラットフォームを展開。自由度の高い働き方とグレード制が特徴。",
+    snapshot: [
+      ["新卒月給例", "32.7万円〜", "2025年度見込み・エンジニア"],
+      ["休日", "140日", "募集要項"],
+      ["賞与", "年2回", "6月・12月"],
+      ["連結売上", "3.70兆円", "2026年3月期"]
+    ],
+    details: {
+      compensation: {
+        summary: "職種・グレードによって報酬が変わる。ここでは公開されているエンジニア新卒コースの例を表示。",
+        facts: [
+          ["新卒月給例", "326,551円〜（2025年度見込み・エンジニアコース）。固定残業相当のグレード手当を含む。", "公式"],
+          ["賞与", "年2回（6月・12月）。新卒初年度は支給条件に注意。", "公式"],
+          ["評価・査定", "公開求人では年2回の査定を明示。グレードに応じた報酬設計。", "公式"],
+          ["注意", "職種ごとに報酬条件が異なるため、全社一律の初任給として扱わない。", "分析"]
+        ]
+      },
+      stability: {
+        summary: "HRテクノロジー、人材派遣、マーケティング・マッチング・テクノロジーの3領域が主要事業。",
+        facts: [
+          ["連結売上収益", "3兆6,973億円（2026年3月期）", "IR"],
+          ["営業利益", "6,305億円（2026年3月期）", "IR"],
+          ["グループ従業員", "45,586名（2026年3月31日時点）", "公式"],
+          ["事業分散", "HR Tech、人材派遣、マッチング・プラットフォームの複数事業を展開。", "公式"]
+        ]
+      },
+      culture: {
+        summary: "『個の情熱』『機会』を前面に出す採用メッセージが特徴。ただし、これを実際の人間関係の評価と同一視しないことが重要。",
+        facts: [
+          ["採用メッセージ", "個人の好奇心や挑戦を重視するメッセージを掲げる。", "公式"],
+          ["社員の人柄", "公式資料だけでは未評価。チーム・上司単位の差を別途確認する必要あり。", "未評価"]
+        ]
+      },
+      workstyle: {
+        summary: "コアタイムなしフレックスやリモートなど、場所と時間の柔軟性を高める制度を公開。",
+        facts: [
+          ["フレックス", "コアタイムなし。標準労働時間帯9:00〜18:00。", "公式"],
+          ["休日", "140日（募集要項）", "公式"],
+          ["リモート", "職種・部署により、出社を前提としない柔軟なリモートワークを導入。", "公式"],
+          ["有給", "新卒エンジニア募集要項では初年度15日付与。", "公式"]
+        ]
+      },
+      career: {
+        summary: "職種横断・事業横断の機会が多い一方、具体的なキャリアは所属事業や職種によって大きく異なる。",
+        facts: [
+          ["研修", "エンジニア向けにはフロントエンド、DB、インフラ、分析、セキュリティ等の研修を用意。", "公式"],
+          ["キャリア設計", "職種・事業の移動可能性があるため、『会社名』より初期配属と職種を確認するのが重要。", "分析"]
+        ]
+      }
+    },
+    sources: [
+      ["新卒 エンジニアコース", "公式", "https://www.recruit.co.jp/employment/students/engineers/"],
+      ["新卒採用トップ", "公式", "https://www.recruit.co.jp/employment/students/"],
+      ["2026年3月期 決算", "IR", "https://recruit-holdings.com/ja/ir/library/upload/recruit_202603Q4_earnings_jp/"],
+      ["会社概要", "公式", "https://recruit-holdings.com/ja/about/profile/"]
+    ]
+  },
+
+  {
+    name: "Mitsubishi Corp.",
+    displayName: "三菱商事",
+    industry: "総合商社",
+    depth: 980,
+    summary: "資源、産業、モビリティ、食品、電力など幅広い事業を展開する総合商社。人的資本ではエンゲージメントや有給取得率などを公開。",
+    snapshot: [
+      ["学部初任給", "35.0万円", "総合職・2027卒掲載値"],
+      ["有給取得率", "73.1%", "2025年度有報"],
+      ["賞与", "年2回", "募集情報"],
+      ["当期純利益", "9,167億円", "2025年度"]
+    ],
+    details: {
+      compensation: {
+        summary: "総合職の新卒給与は高水準。採用待遇の一部は外部採用媒体掲載値も併用しているため、最終確認は公式採用ページが必要。",
+        facts: [
+          ["初任給", "総合職：学士卒350,000円／月、修士卒385,000円／月（2027卒の採用媒体掲載値）", "第三者"],
+          ["賞与", "年2回（6月・12月）", "第三者"],
+          ["昇給", "年1回（4月）", "第三者"],
+          ["福利厚生", "独身寮・社宅、研修所、育児休暇制度等を採用情報で掲載。", "第三者"]
+        ]
+      },
+      stability: {
+        summary: "資源・非資源をまたぐ大型ポートフォリオを持つため、単年度利益だけでなく事業別収益と投資損益を見る必要がある。",
+        facts: [
+          ["収益", "18兆9,160億円（2025年度）", "IR"],
+          ["当期純利益", "9,167億円（2025年度）", "IR"],
+          ["親会社帰属利益", "8,005億円（2025年度）", "IR"],
+          ["事業特性", "資源価格や大型投資・売却の影響を受けるため、利益の質を分解して見る必要あり。", "分析"]
+        ]
+      },
+      culture: {
+        summary: "公式には人材を『最大の資産』と位置づけ、組織風土指標を開示している。",
+        facts: [
+          ["社員エンゲージメント", "肯定的回答77%（2025年度有報記載）", "IR"],
+          ["社員を活かす環境", "肯定的回答73%（2025年度有報記載）", "IR"],
+          ["社員の人柄", "公式資料だけでは未評価。", "未評価"]
+        ]
+      },
+      workstyle: {
+        summary: "有給取得率などは公開されているが、部署・海外赴任の有無で実際の働き方は大きく変わる。",
+        facts: [
+          ["有給取得率", "73.1%（2025年度）", "IR"],
+          ["勤務時間", "採用媒体掲載の総合職は9:15〜17:30、実働7時間15分。", "第三者"],
+          ["勤務地", "本店、国内・海外拠点、事業会社など。", "第三者"],
+          ["働き方の見方", "商社は海外駐在・事業会社出向の比重が高いため、制度だけでなくキャリア配置とセットで見る。", "分析"]
+        ]
+      },
+      career: {
+        summary: "本社業務だけでなく、事業投資・事業会社・海外拠点など複数のキャリア環境がある。",
+        facts: [
+          ["人材方針", "多彩・多才な人材の採用・活用を人的資本戦略で明示。", "公式"],
+          ["配属・キャリア", "国内外の拠点や事業会社を含むキャリア可能性。", "公式"],
+          ["確認すべき点", "部署・事業領域によって求められる専門性が大きく異なるため、配属実績やOB/OG情報を追加すると精度が上がる。", "分析"]
+        ]
+      }
+    },
+    sources: [
+      ["三菱商事 公式採用", "公式", "https://www.mitsubishicorp.com/jp/ja/recruit/"],
+      ["2025年度 有価証券報告書", "IR", "https://www.mitsubishicorp.com/jp/ja/ir/library/fstatement/pdf/2025_04/y2025_04.pdf"],
+      ["2025年度 事業報告", "IR", "https://www.mitsubishicorp.com/jp/ja/ir/sh_meeting/pdf/shoshu_2026/p08.pdf"],
+      ["マイナビ2027 採用データ", "第三者", "https://job.mynavi.jp/27/pc/search/corp128/recruiting_course27046782/recruiting_course.html"]
+    ]
+  }
+];
+
+function makeBasicCompany({
+  name, displayName, industry, depth, summary, website = ""
+}) {
+  return {
+    name,
+    displayName,
+    industry,
+    depth,
+    summary,
+    snapshot: [
+      ["業界", industry, "大手企業デモ"],
+      ["企業規模", "大手", "日本の主要企業"],
+      ["詳細データ", "収集中", "公式資料を優先"],
+      ["福利厚生", "収集中", "次フェーズで拡充"]
+    ],
+    details: {
+      compensation: {
+        summary: "この企業は採掘対象として追加済みです。給与・賞与・評価制度は、公式採用情報を確認して順次構造化します。",
+        facts: [
+          ["給料・待遇", "デモ版では詳細データを収集中。", "未評価"],
+          ["評価制度", "公式資料を優先して追加予定。", "未評価"]
+        ]
+      },
+      benefits: {
+        summary: "住宅・社宅/寮、退職金・企業年金、持株会、育児介護、自己啓発などを独立して確認します。",
+        facts: [
+          ["住宅・社宅", "公式採用情報で最新条件を確認。", "未評価"],
+          ["資産形成", "退職金・企業年金・持株会等を公式資料で確認。", "未評価"],
+          ["育児・介護", "休職・短時間勤務・各種支援制度を公式資料で確認。", "未評価"],
+          ["学習支援", "研修・資格・自己啓発支援を公式採用情報で確認。", "未評価"]
+        ]
+      },
+      stability: {
+        summary: "経営安定性は、売上・利益・事業ポートフォリオ・市場ポジションなどをIRから順次追加します。",
+        facts: [
+          ["業績", "IRベースで順次追加予定。", "未評価"],
+          ["事業基盤", summary, "分析"]
+        ]
+      },
+      culture: {
+        summary: "社風・人間関係は公式メッセージだけで断定せず、社員インタビューや第三者情報を別レイヤーで扱う方針です。",
+        facts: [
+          ["社風", "デモ版では未評価。", "未評価"],
+          ["人間関係", "部署差が大きいため、今後データソースを分離して追加予定。", "未評価"]
+        ]
+      },
+      workstyle: {
+        summary: "残業、有給、フレックス、リモート、転勤などを公式資料から順次追加します。",
+        facts: [
+          ["働き方", "詳細データを収集中。", "未評価"],
+          ["勤務地・転勤", "公式採用情報を優先して追加予定。", "未評価"]
+        ]
+      },
+      career: {
+        summary: "配属、研修、職種別キャリア、異動制度などを順次追加します。",
+        facts: [
+          ["成長環境", "詳細データを収集中。", "未評価"],
+          ["キャリアパス", "公式採用情報を優先して追加予定。", "未評価"]
+        ]
+      }
+    },
+    sources: website ? [["公式サイト", "公式", website]] : []
+  };
+}
+
+const basicCompanies = [
+  makeBasicCompany({name:"Nintendo", displayName:"任天堂", industry:"テック・メディア", depth:330,
+    summary:"ゲーム専用機、ソフトウェア、IPビジネスを展開する日本の大手エンターテインメント企業。", website:"https://www.nintendo.co.jp/"}),
+  makeBasicCompany({name:"CyberAgent", displayName:"サイバーエージェント", industry:"テック・メディア", depth:670,
+    summary:"インターネット広告、メディア、ゲームなどを展開する大手インターネット企業。", website:"https://www.cyberagent.co.jp/"}),
+  makeBasicCompany({name:"Rakuten Group", displayName:"楽天グループ", industry:"テック・メディア", depth:1040,
+    summary:"EC、FinTech、モバイル、デジタルサービスを横断する大手プラットフォーム企業。", website:"https://global.rakuten.com/corp/"}),
+
+  makeBasicCompany({name:"Mitsui & Co.", displayName:"三井物産", industry:"総合商社", depth:360,
+    summary:"金属資源、エネルギー、機械、化学品、生活産業などを展開する総合商社。", website:"https://www.mitsui.com/jp/ja/"}),
+  makeBasicCompany({name:"Sumitomo Corporation", displayName:"住友商事", industry:"総合商社", depth:610,
+    summary:"多様な産業分野で事業投資・トレーディングを行う総合商社。", website:"https://www.sumitomocorp.com/ja/jp"}),
+  makeBasicCompany({name:"Marubeni", displayName:"丸紅", industry:"総合商社", depth:1110,
+    summary:"電力・インフラ、食料、素材、輸送機、金融など幅広い事業領域を持つ総合商社。", website:"https://www.marubeni.com/jp/"}),
+
+  makeBasicCompany({name:"Panasonic Holdings", displayName:"パナソニック ホールディングス", industry:"メーカー・DX", depth:250,
+    summary:"家電、電池、B2Bソリューション、住宅・エネルギー領域などを展開する大手企業グループ。", website:"https://holdings.panasonic/jp/"}),
+  makeBasicCompany({name:"Fujitsu", displayName:"富士通", industry:"メーカー・DX", depth:620,
+    summary:"ITサービス、クラウド、コンピューティング、DX支援を展開する大手テクノロジー企業。", website:"https://global.fujitsu/ja-jp"}),
+  makeBasicCompany({name:"NEC", displayName:"NEC", industry:"メーカー・DX", depth:1010,
+    summary:"ITサービス、通信、社会インフラ、セキュリティなどを展開する大手テクノロジー企業。", website:"https://jpn.nec.com/"}),
+
+  makeBasicCompany({name:"NRI", displayName:"野村総合研究所", industry:"IT・SI", depth:315,
+    summary:"コンサルティングとITソリューションを組み合わせる大手シンクタンク・SI企業。", website:"https://www.nri.com/jp/"}),
+  makeBasicCompany({name:"SCSK", displayName:"SCSK", industry:"IT・SI", depth:720,
+    summary:"システム開発、ITインフラ、BPO、クラウドなどを提供する大手ITサービス企業。", website:"https://www.scsk.jp/"}),
+  makeBasicCompany({name:"TIS", displayName:"TIS", industry:"IT・SI", depth:1150,
+    summary:"決済、金融、産業、公共など多様な領域でITサービスを提供する大手SI企業。", website:"https://www.tis.co.jp/"}),
+
+  makeBasicCompany({name:"PERSOL Holdings", displayName:"パーソルホールディングス", industry:"人材・Platform", depth:300,
+    summary:"人材派遣、転職、BPO、テクノロジーなどを展開する大手人材サービスグループ。", website:"https://www.persol-group.co.jp/"}),
+  makeBasicCompany({name:"en Japan", displayName:"エン・ジャパン", industry:"人材・Platform", depth:650,
+    summary:"求人・採用支援、人材紹介、HR Techなどを展開する人材サービス企業。", website:"https://corp.en-japan.com/"}),
+  makeBasicCompany({name:"dip", displayName:"ディップ", industry:"人材・Platform", depth:1080,
+    summary:"求人情報サービスとDX事業を展開する人材・デジタルプラットフォーム企業。", website:"https://www.dip-net.co.jp/"}),
+
+  makeBasicCompany({name:"NTT", displayName:"NTT", industry:"通信", depth:270,
+    summary:"通信、IT、データセンター、研究開発などをグローバルに展開する大手通信グループ。", website:"https://group.ntt/jp/"}),
+  makeBasicCompany({name:"KDDI", displayName:"KDDI", industry:"通信", depth:690,
+    summary:"モバイル、固定通信、金融、DX、エネルギーなどを展開する大手通信企業。", website:"https://www.kddi.com/"}),
+  makeBasicCompany({name:"SoftBank Corp.", displayName:"ソフトバンク", industry:"通信", depth:1090,
+    summary:"通信、法人DX、AI、決済などを展開する大手通信・テクノロジー企業。", website:"https://www.softbank.jp/corp/"}),
+
+  makeBasicCompany({name:"Toyota Motor", displayName:"トヨタ自動車", industry:"自動車", depth:190,
+    summary:"自動車、モビリティ、電動化、ソフトウェア領域を展開する日本最大級のメーカー。", website:"https://global.toyota/jp/"}),
+  makeBasicCompany({name:"Honda Motor", displayName:"本田技研工業", industry:"自動車", depth:520,
+    summary:"四輪、二輪、パワープロダクツ、航空などを展開するグローバルメーカー。", website:"https://global.honda/jp/"}),
+  makeBasicCompany({name:"DENSO", displayName:"デンソー", industry:"自動車", depth:820,
+    summary:"自動車部品、電動化、半導体、ソフトウェアなどを展開する大手モビリティ企業。", website:"https://www.denso.com/jp/ja/"}),
+  makeBasicCompany({name:"Nissan Motor", displayName:"日産自動車", industry:"自動車", depth:1180,
+    summary:"自動車、EV、モビリティ技術を展開する大手完成車メーカー。", website:"https://www.nissan-global.com/JP/"}),
+
+  makeBasicCompany({name:"MUFG", displayName:"三菱UFJフィナンシャル・グループ", industry:"金融", depth:230,
+    summary:"銀行、信託、証券、カードなどを展開する日本最大級の総合金融グループ。", website:"https://www.mufg.jp/"}),
+  makeBasicCompany({name:"SMFG", displayName:"三井住友フィナンシャルグループ", industry:"金融", depth:470,
+    summary:"銀行、カード、証券、リースなどを展開する大手総合金融グループ。", website:"https://www.smfg.co.jp/"}),
+  makeBasicCompany({name:"Mizuho FG", displayName:"みずほフィナンシャルグループ", industry:"金融", depth:720,
+    summary:"銀行、信託、証券などを一体運営する大手総合金融グループ。", website:"https://www.mizuho-fg.co.jp/"}),
+  makeBasicCompany({name:"Nomura Holdings", displayName:"野村ホールディングス", industry:"金融", depth:950,
+    summary:"証券、投資銀行、資産運用などを展開する大手金融グループ。", website:"https://www.nomuraholdings.com/jp/"}),
+  makeBasicCompany({name:"Tokio Marine Holdings", displayName:"東京海上ホールディングス", industry:"金融", depth:1190,
+    summary:"損害保険を中心に国内外で保険・金融事業を展開する大手グループ。", website:"https://www.tokiomarinehd.com/"}),
+
+  makeBasicCompany({name:"Fast Retailing", displayName:"ファーストリテイリング", industry:"消費財・小売", depth:210,
+    summary:"UNIQLOを中心にグローバルでアパレル事業を展開する大手小売企業。", website:"https://www.fastretailing.com/jp/"}),
+  makeBasicCompany({name:"Seven & i Holdings", displayName:"セブン＆アイ・ホールディングス", industry:"消費財・小売", depth:455,
+    summary:"コンビニエンスストアを中心に小売・金融などを展開する大手流通グループ。", website:"https://www.7andi.com/"}),
+  makeBasicCompany({name:"Kao", displayName:"花王", industry:"消費財・小売", depth:710,
+    summary:"日用品、化粧品、ケミカル製品などを展開する大手消費財メーカー。", website:"https://www.kao.com/jp/"}),
+  makeBasicCompany({name:"Ajinomoto", displayName:"味の素", industry:"消費財・小売", depth:920,
+    summary:"食品、アミノサイエンス、ヘルスケアなどを展開する大手食品・化学企業。", website:"https://www.ajinomoto.co.jp/company/jp/"}),
+  makeBasicCompany({name:"Shiseido", displayName:"資生堂", industry:"消費財・小売", depth:1170,
+    summary:"化粧品を中心にグローバル展開する大手ビューティー企業。", website:"https://corp.shiseido.com/jp/"}),
+  makeBasicCompany({name:"Mercari", displayName:"メルカリ", industry:"テック・メディア", depth:150,
+    summary:"フリマ・FinTech・デジタルプラットフォームを展開する日本の大手企業。", website:"https://about.mercari.com/"}),
+  makeBasicCompany({name:"MIXI", displayName:"MIXI", industry:"テック・メディア", depth:287,
+    summary:"デジタルエンターテインメント・スポーツ・ライフスタイルを展開する日本の大手企業。", website:"https://mixi.co.jp/"}),
+  makeBasicCompany({name:"Kakaku.com", displayName:"カカクコム", industry:"テック・メディア", depth:424,
+    summary:"価格比較・飲食・旅行等のインターネットメディアを展開する日本の大手企業。", website:"https://corporate.kakaku.com/"}),
+  makeBasicCompany({name:"GREE Holdings", displayName:"グリーホールディングス", industry:"テック・メディア", depth:561,
+    summary:"ゲーム・メタバース・DX・投資を展開する日本の大手企業。", website:"https://hd.gree.net/jp/ja/"}),
+  makeBasicCompany({name:"COLOPL", displayName:"コロプラ", industry:"テック・メディア", depth:698,
+    summary:"スマートフォンゲーム・XR・エンターテインメントを展開する日本の大手企業。", website:"https://colopl.co.jp/"}),
+  makeBasicCompany({name:"MonotaRO", displayName:"MonotaRO", industry:"テック・メディア", depth:835,
+    summary:"事業者向けEC・データ活用・物流を展開する日本の大手企業。", website:"https://corp.monotaro.com/"}),
+  makeBasicCompany({name:"ZOZO", displayName:"ZOZO", industry:"テック・メディア", depth:972,
+    summary:"ファッションEC・計測技術・広告を展開する日本の大手企業。", website:"https://corp.zozo.com/"}),
+  makeBasicCompany({name:"Kanematsu", displayName:"兼松", industry:"総合商社", depth:1109,
+    summary:"電子・デバイス・食料・鉄鋼・車両等の商社事業を展開する日本の大手企業。", website:"https://www.kanematsu.co.jp/"}),
+  makeBasicCompany({name:"Nagase & Co.", displayName:"長瀬産業", industry:"総合商社", depth:246,
+    summary:"化学品・素材・ライフサイエンス・電子関連の商社事業を展開する日本の大手企業。", website:"https://www.nagase.co.jp/"}),
+  makeBasicCompany({name:"Sony Semiconductor Solutions", displayName:"ソニーセミコンダクタソリューションズ", industry:"メーカー・DX", depth:383,
+    summary:"イメージセンサー・半導体を展開する日本の大手企業。", website:"https://www.sony-semicon.com/ja/"}),
+  makeBasicCompany({name:"Tokyo Electron", displayName:"東京エレクトロン", industry:"メーカー・DX", depth:520,
+    summary:"半導体製造装置を展開する日本の大手企業。", website:"https://www.tel.co.jp/"}),
+  makeBasicCompany({name:"Advantest", displayName:"アドバンテスト", industry:"メーカー・DX", depth:657,
+    summary:"半導体試験装置を展開する日本の大手企業。", website:"https://www.advantest.com/ja/"}),
+  makeBasicCompany({name:"Renesas Electronics", displayName:"ルネサス エレクトロニクス", industry:"メーカー・DX", depth:794,
+    summary:"車載・産業向け半導体を展開する日本の大手企業。", website:"https://www.renesas.com/jp/ja"}),
+  makeBasicCompany({name:"ROHM", displayName:"ローム", industry:"メーカー・DX", depth:931,
+    summary:"半導体・電子部品を展開する日本の大手企業。", website:"https://www.rohm.co.jp/"}),
+  makeBasicCompany({name:"Sumitomo Electric", displayName:"住友電気工業", industry:"メーカー・DX", depth:1068,
+    summary:"自動車・情報通信・環境エネルギー関連製品を展開する日本の大手企業。", website:"https://sumitomoelectric.com/jp/"}),
+  makeBasicCompany({name:"Mitsubishi Heavy Industries", displayName:"三菱重工業", industry:"メーカー・DX", depth:205,
+    summary:"エネルギー・航空宇宙・防衛・産業機械を展開する日本の大手企業。", website:"https://www.mhi.com/jp"}),
+  makeBasicCompany({name:"IHI", displayName:"IHI", industry:"メーカー・DX", depth:342,
+    summary:"航空宇宙・エネルギー・社会インフラを展開する日本の大手企業。", website:"https://www.ihi.co.jp/"}),
+  makeBasicCompany({name:"Kawasaki Heavy Industries", displayName:"川崎重工業", industry:"メーカー・DX", depth:479,
+    summary:"航空宇宙・鉄道・船舶・ロボット・エネルギーを展開する日本の大手企業。", website:"https://www.khi.co.jp/"}),
+  makeBasicCompany({name:"DMG MORI", displayName:"DMG森精機", industry:"メーカー・DX", depth:616,
+    summary:"工作機械・自動化・デジタル製造を展開する日本の大手企業。", website:"https://www.dmgmori.co.jp/"}),
+  makeBasicCompany({name:"SMC", displayName:"SMC", industry:"メーカー・DX", depth:753,
+    summary:"空圧制御機器・FAを展開する日本の大手企業。", website:"https://www.smcworld.com/ja-jp/"}),
+  makeBasicCompany({name:"Terumo", displayName:"テルモ", industry:"メーカー・DX", depth:890,
+    summary:"医療機器・カテーテル・血液関連を展開する日本の大手企業。", website:"https://www.terumo.co.jp/"}),
+  makeBasicCompany({name:"Olympus", displayName:"オリンパス", industry:"メーカー・DX", depth:1027,
+    summary:"内視鏡・医療機器を展開する日本の大手企業。", website:"https://www.olympus.co.jp/"}),
+  makeBasicCompany({name:"HOYA", displayName:"HOYA", industry:"メーカー・DX", depth:164,
+    summary:"光学・半導体関連・医療を展開する日本の大手企業。", website:"https://www.hoya.com/"}),
+  makeBasicCompany({name:"Asahi Kasei", displayName:"旭化成", industry:"メーカー・DX", depth:301,
+    summary:"素材・住宅・ヘルスケアを展開する日本の大手企業。", website:"https://www.asahi-kasei.com/jp/"}),
+  makeBasicCompany({name:"Accenture Japan", displayName:"アクセンチュア", industry:"IT・SI", depth:438,
+    summary:"コンサルティング・テクノロジー・オペレーションを展開する日本の大手企業。", website:"https://www.accenture.com/jp-ja"}),
+  makeBasicCompany({name:"NTT Communications", displayName:"NTTコミュニケーションズ", industry:"IT・SI", depth:575,
+    summary:"法人ICT・ネットワーク・クラウドを展開する日本の大手企業。", website:"https://www.ntt.com/"}),
+  makeBasicCompany({name:"IIJ", displayName:"インターネットイニシアティブ", industry:"IT・SI", depth:712,
+    summary:"インターネット・クラウド・セキュリティを展開する日本の大手企業。", website:"https://www.iij.ad.jp/"}),
+  makeBasicCompany({name:"CTC", displayName:"伊藤忠テクノソリューションズ", industry:"IT・SI", depth:849,
+    summary:"SI・クラウド・データ活用を展開する日本の大手企業。", website:"https://www.ctc-g.co.jp/"}),
+  makeBasicCompany({name:"NSSOL", displayName:"日鉄ソリューションズ", industry:"IT・SI", depth:986,
+    summary:"SI・ITインフラ・DXを展開する日本の大手企業。", website:"https://www.nssol.nipponsteel.com/"}),
+  makeBasicCompany({name:"NEC Solutions Innovators", displayName:"NECソリューションイノベータ", industry:"IT・SI", depth:1123,
+    summary:"SI・ソフトウェア・社会DXを展開する日本の大手企業。", website:"https://www.nec-solutioninnovators.co.jp/"}),
+  makeBasicCompany({name:"Hitachi Solutions", displayName:"日立ソリューションズ", industry:"IT・SI", depth:260,
+    summary:"SI・クラウド・セキュリティを展開する日本の大手企業。", website:"https://www.hitachi-solutions.co.jp/"}),
+  makeBasicCompany({name:"Works Applications", displayName:"ワークスアプリケーションズ", industry:"IT・SI", depth:397,
+    summary:"ERP・業務ソフトウェアを展開する日本の大手企業。", website:"https://www.worksap.co.jp/"}),
+  makeBasicCompany({name:"Money Forward", displayName:"マネーフォワード", industry:"IT・SI", depth:534,
+    summary:"FinTech・バックオフィスSaaSを展開する日本の大手企業。", website:"https://corp.moneyforward.com/"}),
+  makeBasicCompany({name:"Sansan", displayName:"Sansan", industry:"IT・SI", depth:671,
+    summary:"営業DX・名刺/請求書SaaSを展開する日本の大手企業。", website:"https://jp.corp-sansan.com/"}),
+  makeBasicCompany({name:"Visional", displayName:"ビジョナル", industry:"人材・Platform", depth:808,
+    summary:"HR Tech・採用プラットフォームを展開する日本の大手企業。", website:"https://www.visional.inc/"}),
+  makeBasicCompany({name:"Mynavi", displayName:"マイナビ", industry:"人材・Platform", depth:945,
+    summary:"就職・転職・生活情報サービスを展開する日本の大手企業。", website:"https://www.mynavi.jp/"}),
+  makeBasicCompany({name:"Leverages", displayName:"レバレジーズ", industry:"人材・Platform", depth:1082,
+    summary:"人材・医療・IT・海外事業を展開する日本の大手企業。", website:"https://leverages.jp/"}),
+  makeBasicCompany({name:"Persol Career", displayName:"パーソルキャリア", industry:"人材・Platform", depth:219,
+    summary:"転職・採用・HRサービスを展開する日本の大手企業。", website:"https://www.persol-career.co.jp/"}),
+  makeBasicCompany({name:"OpenWork", displayName:"オープンワーク", industry:"人材・Platform", depth:356,
+    summary:"社員クチコミ・採用プラットフォームを展開する日本の大手企業。", website:"https://www.openwork.co.jp/"}),
+  makeBasicCompany({name:"NTT DOCOMO", displayName:"NTTドコモ", industry:"通信", depth:493,
+    summary:"モバイル・スマートライフ・法人DXを展開する日本の大手企業。", website:"https://www.docomo.ne.jp/corporate/"}),
+  makeBasicCompany({name:"Rakuten Mobile", displayName:"楽天モバイル", industry:"通信", depth:630,
+    summary:"モバイル通信・クラウドネイティブネットワークを展開する日本の大手企業。", website:"https://corp.mobile.rakuten.co.jp/"}),
+  makeBasicCompany({name:"Isuzu Motors", displayName:"いすゞ自動車", industry:"自動車", depth:767,
+    summary:"商用車・ディーゼル・物流ソリューションを展開する日本の大手企業。", website:"https://www.isuzu.co.jp/"}),
+  makeBasicCompany({name:"Hino Motors", displayName:"日野自動車", industry:"自動車", depth:904,
+    summary:"商用車・トラック・バスを展開する日本の大手企業。", website:"https://www.hino.co.jp/"}),
+  makeBasicCompany({name:"Toyota Industries", displayName:"豊田自動織機", industry:"自動車", depth:1041,
+    summary:"自動車・産業車両・物流機器を展開する日本の大手企業。", website:"https://www.toyota-shokki.co.jp/"}),
+  makeBasicCompany({name:"JTEKT", displayName:"ジェイテクト", industry:"自動車", depth:178,
+    summary:"ステアリング・軸受・工作機械を展開する日本の大手企業。", website:"https://www.jtekt.co.jp/"}),
+  makeBasicCompany({name:"Resona Holdings", displayName:"りそなホールディングス", industry:"金融", depth:315,
+    summary:"銀行・信託・法人/個人金融を展開する日本の大手企業。", website:"https://www.resona-gr.co.jp/"}),
+  makeBasicCompany({name:"SBI Shinsei Bank", displayName:"SBI新生銀行", industry:"金融", depth:452,
+    summary:"銀行・リテール・法人金融を展開する日本の大手企業。", website:"https://www.sbishinseibank.co.jp/"}),
+  makeBasicCompany({name:"Dai-ichi Life Holdings", displayName:"第一生命ホールディングス", industry:"金融", depth:589,
+    summary:"生命保険・資産運用・海外保険を展開する日本の大手企業。", website:"https://www.dai-ichi-life-hd.com/"}),
+  makeBasicCompany({name:"Nippon Life", displayName:"日本生命", industry:"金融", depth:726,
+    summary:"生命保険・資産運用を展開する日本の大手企業。", website:"https://www.nissay.co.jp/"}),
+  makeBasicCompany({name:"Meiji Yasuda Life", displayName:"明治安田生命", industry:"金融", depth:863,
+    summary:"生命保険・資産運用を展開する日本の大手企業。", website:"https://www.meijiyasuda.co.jp/"}),
+  makeBasicCompany({name:"Sumitomo Life", displayName:"住友生命", industry:"金融", depth:1000,
+    summary:"生命保険・健康増進サービスを展開する日本の大手企業。", website:"https://www.sumitomolife.co.jp/"}),
+  makeBasicCompany({name:"Mitsubishi HC Capital", displayName:"三菱HCキャピタル", industry:"金融", depth:1137,
+    summary:"リース・事業投資・航空・物流・再エネを展開する日本の大手企業。", website:"https://www.mitsubishi-hc-capital.com/"}),
+  makeBasicCompany({name:"JCB", displayName:"ジェーシービー", industry:"金融", depth:274,
+    summary:"クレジットカード・決済を展開する日本の大手企業。", website:"https://www.global.jcb/ja/"}),
+  makeBasicCompany({name:"Suntory Holdings", displayName:"サントリーホールディングス", industry:"消費財・小売", depth:411,
+    summary:"飲料・酒類・食品・健康を展開する日本の大手企業。", website:"https://www.suntory.co.jp/company/"}),
+  makeBasicCompany({name:"Calbee", displayName:"カルビー", industry:"消費財・小売", depth:548,
+    summary:"スナック・食品を展開する日本の大手企業。", website:"https://www.calbee.co.jp/corporate/"}),
+  makeBasicCompany({name:"Morinaga & Co.", displayName:"森永製菓", industry:"消費財・小売", depth:685,
+    summary:"菓子・食品・健康を展開する日本の大手企業。", website:"https://www.morinaga.co.jp/company/"}),
+  makeBasicCompany({name:"Lion Corporation", displayName:"ライオン", industry:"消費財・小売", depth:822,
+    summary:"オーラルケア・日用品を展開する日本の大手企業。", website:"https://www.lion.co.jp/ja/"}),
+  makeBasicCompany({name:"Pigeon", displayName:"ピジョン", industry:"消費財・小売", depth:959,
+    summary:"ベビー・育児用品を展開する日本の大手企業。", website:"https://www.pigeon.co.jp/"}),
+  makeBasicCompany({name:"ABC-Mart", displayName:"エービーシー・マート", industry:"消費財・小売", depth:1096,
+    summary:"シューズ小売を展開する日本の大手企業。", website:"https://www.abc-mart.co.jp/"}),
+  makeBasicCompany({name:"Don Quijote / PPIH", displayName:"パン・パシフィック・インターナショナルホールディングス", industry:"消費財・小売", depth:233,
+    summary:"ディスカウント小売・海外小売を展開する日本の大手企業。", website:"https://ppih.co.jp/"}),
+  makeBasicCompany({name:"Yamada Holdings", displayName:"ヤマダホールディングス", industry:"消費財・小売", depth:370,
+    summary:"家電小売・住宅・金融を展開する日本の大手企業。", website:"https://www.yamada-holdings.jp/"})
+
+];
+
+const companies = [...detailedCompanies, ...basicCompanies];
+
+const state = {
+level: 1,
+  xp: 0,
+  discovered: new Set(JSON.parse(localStorage.getItem("vi-major-discovered-v2") || "[]")),
+  saved: new Set(JSON.parse(localStorage.getItem("vi-major-saved-v2") || "[]")),
+  deepest: Number(localStorage.getItem("vi-major-deepest-v2") || 0),
+  scoreFilter: 50,
+  stageFilter: "ALL",
+  collectionFilter: "ALL",
+  activeIndustryFilter: "ALL",
+  selectedCompany: null,
+  detailTab: "compensation"
+};
+
+const els = {
+  industryRuler: document.getElementById("industryRuler"),
+  zoneLines: document.getElementById("zoneLines"),
+  mineStage: document.getElementById("mineStage"),
+  mineWrap: document.getElementById("mineWrap"),
+  oreLayer: document.getElementById("oreLayer"),
+  canvas: document.getElementById("digCanvas"),
+  hint: document.getElementById("digHint"),
+  depthFloat: document.getElementById("depthFloat"),
+  industryFloat: document.getElementById("industryFloat"),
+levelValue: document.getElementById("levelValue"),
+  xpMeter: document.getElementById("xpMeter"),
+  discoveredValue: document.getElementById("discoveredValue"),
+  deepestValue: document.getElementById("deepestValue"),
+  collectionCount: document.getElementById("collectionCount"),
+  collectionList: document.getElementById("collectionList"),
+  companyDialog: document.getElementById("companyDialog"),
+  filterDialog: document.getElementById("filterDialog"),
+  toast: document.getElementById("toast"),
+  soilPhysicsLayer: document.getElementById("soilPhysicsLayer"),
+  shovel: document.getElementById("shovelTool"),
+  shovelDockLabel: document.getElementById("shovelDockLabel"),
+  detailTabs: document.getElementById("detailTabs"),
+  detailBody: document.getElementById("detailBody"),
+  snapshotGrid: document.getElementById("snapshotGrid"),
+  dialogSources: document.getElementById("dialogSources")
+};
+
+let ctx;
+let toastTimer;
+
+const SURFACE_BINS = 220;
+let surfaceProfile = new Array(SURFACE_BINS).fill(0);
+let clods = [];
+let lastPhysicsTime = performance.now();
+
+const shovelPhysics = {
+  x: 0,
+  y: 0,
+  vx: 0,
+  vy: 0,
+  angle: 7,
+  angleV: 0,
+  targetX: 0,
+  targetY: 0,
+  grabbed: false,
+  holding: false,
+  pointerId: null,
+  holdTimer: null,
+  digArmed: true,
+  previousTipY: null,
+  impactCooldown: 0
+};
+
+function persist() {
+  localStorage.setItem("vi-major-discovered-v2", JSON.stringify([...state.discovered]));
+  localStorage.setItem("vi-major-saved-v2", JSON.stringify([...state.saved]));
+  localStorage.setItem("vi-major-deepest-v2", String(state.deepest));
+
+  const h = Math.max(1, els.mineStage.clientHeight);
+  const normalized = surfaceProfile.map(v => Math.max(0, Math.min(1, v / h)));
+  localStorage.setItem("vi-major-surface-v2", JSON.stringify(normalized));
+}
+
+function loadSurfaceProfile() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("vi-major-surface-v2") || "null");
+    if (Array.isArray(saved) && saved.length === SURFACE_BINS) {
+      const h = Math.max(1, els.mineStage.clientHeight);
+      surfaceProfile = saved.map(v => Math.max(0, Math.min(h - 10, Number(v || 0) * h)));
+      return;
+    }
+  } catch (_) {}
+  surfaceProfile = new Array(SURFACE_BINS).fill(0);
+}
+
+function initials(name) {
+  return name.split(/\s+/).map(x => x[0]).join("").replace(/\W/g, "").slice(0, 2).toUpperCase() || "VI";
+}
+
+function seededOffset(name) {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return ((h % 6000) / 6000) * .72 + .14;
+}
+
+function buildIndustryRuler() {
+  els.industryRuler.innerHTML = "";
+  els.industryRuler.style.gridTemplateColumns = `repeat(${industries.length}, 1fr)`;
+  industries.forEach((industry, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = industry;
+    b.dataset.industry = industry;
+    b.addEventListener("click", () => {
+      els.industryRuler.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+      const target = companies.find(c => c.industry === industry);
+      const depth = target ? target.depth : 300;
+      const stageTop = els.mineWrap.offsetTop + (depth / 1250) * els.mineStage.clientHeight;
+      window.scrollTo({ top: Math.max(0, stageTop - window.innerHeight * .45), behavior: "smooth" });
+      showToast(`${industry} の鉱脈へ移動`);
+    });
+    els.industryRuler.appendChild(b);
+
+    if (i > 0) {
+      const line = document.createElement("i");
+      line.style.left = `${(i / industries.length) * 100}%`;
+      els.zoneLines.appendChild(line);
+    }
+  });
+}
+
+function renderOres() {
+  els.oreLayer.innerHTML = "";
+
+  companies.forEach(company => {
+    if (state.activeIndustryFilter !== "ALL" && company.industry !== state.activeIndustryFilter) return;
+    const zoneIndex = industries.indexOf(company.industry);
+    const zoneStart = zoneIndex / industries.length;
+    const zoneWidth = 1 / industries.length;
+    const x = (zoneStart + seededOffset(company.name) * zoneWidth) * 100;
+    const y = Math.max(5, Math.min(96, (company.depth / 1250) * 100));
+
+    const btn = document.createElement("button");
+    btn.className = "ore";
+    btn.type = "button";
+    btn.dataset.name = company.name;
+    btn.dataset.industry = company.industry;
+    btn.style.left = `${x}%`;
+    btn.style.top = `${y}%`;
+    btn.innerHTML = `
+      <span class="ore-stone">◇</span>
+      <span class="ore-label">
+        <strong>${company.displayName}</strong>
+        <small>${company.industry}</small>
+      </span>
+    `;
+
+    if (state.discovered.has(company.name)) btn.classList.add("revealed");
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (btn.classList.contains("revealed")) openCompany(company);
+    });
+
+    els.oreLayer.appendChild(btn);
+  });
+}
+
+function drawCover() {
+  const rect = els.mineStage.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  els.canvas.width = Math.round(rect.width * dpr);
+  els.canvas.height = Math.round(els.mineStage.clientHeight * dpr);
+  els.canvas.style.width = `${rect.width}px`;
+  els.canvas.style.height = `${els.mineStage.clientHeight}px`;
+
+  ctx = els.canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const w = rect.width;
+  const h = els.mineStage.clientHeight;
+
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0.00, "#b97b3b");
+  grad.addColorStop(0.18, "#a56734");
+  grad.addColorStop(0.38, "#8a542d");
+  grad.addColorStop(0.58, "#674027");
+  grad.addColorStop(0.78, "#49301f");
+  grad.addColorStop(1.00, "#2b2018");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  const bands = [
+    [0.16, "rgba(120,70,35,.26)"],
+    [0.34, "rgba(96,54,29,.29)"],
+    [0.53, "rgba(70,42,25,.30)"],
+    [0.72, "rgba(48,31,22,.34)"],
+    [0.90, "rgba(22,19,16,.38)"]
+  ];
+
+  bands.forEach(([p, color], idx) => {
+    const y = p * h;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    const steps = 12;
+    for (let s = 0; s <= steps; s++) {
+      const x = (s / steps) * w;
+      const wave = Math.sin(s * 1.65 + idx) * 18 + Math.sin(s * .55) * 8;
+      ctx.lineTo(x, y + wave);
+    }
+    ctx.lineTo(w, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  });
+
+  // Deterministic soil texture.
+  let seed = 77;
+  const rand = () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  };
+
+  for (let i = 0; i < Math.round(w * h / 14000); i++) {
+    const x = rand() * w;
+    const y = rand() * h;
+    const r = 1 + rand() * 6;
+    ctx.beginPath();
+    ctx.ellipse(x, y, r * 1.5, r, rand(), 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${30 + Math.floor(rand()*60)},${22 + Math.floor(rand()*38)},${15 + Math.floor(rand()*24)},${.16 + rand()*.22})`;
+    ctx.fill();
+  }
+
+  eraseExcavatedSurface();
+}
+
+function eraseExcavatedSurface() {
+  if (!ctx) return;
+  const w = els.mineStage.getBoundingClientRect().width;
+  const step = w / (SURFACE_BINS - 1);
+
+  ctx.save();
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(w, 0);
+
+  for (let i = SURFACE_BINS - 1; i >= 0; i--) {
+    const roughX = i * step;
+    const roughY = surfaceProfile[i];
+    ctx.lineTo(roughX, roughY);
+  }
+
+  ctx.closePath();
+  ctx.fillStyle = "#000";
+  ctx.fill();
+  ctx.restore();
+}
+
+function getCompanyPoint(company) {
+  const rect = els.mineStage.getBoundingClientRect();
+  const zoneIndex = industries.indexOf(company.industry);
+  const zoneStart = zoneIndex / industries.length;
+  const zoneWidth = 1 / industries.length;
+  return {
+    x: (zoneStart + seededOffset(company.name) * zoneWidth) * rect.width,
+    y: (company.depth / 1250) * els.mineStage.clientHeight
+  };
+}
+
+function surfaceDepthAtX(x) {
+  const w = Math.max(1, els.mineStage.getBoundingClientRect().width);
+  const pos = Math.max(0, Math.min(SURFACE_BINS - 1, (x / w) * (SURFACE_BINS - 1)));
+  const i0 = Math.floor(pos);
+  const i1 = Math.min(SURFACE_BINS - 1, i0 + 1);
+  const t = pos - i0;
+  return surfaceProfile[i0] * (1 - t) + surfaceProfile[i1] * t;
+}
+
+function carveWithShovel(localX, downwardSpeed) {
+  const w = els.mineStage.getBoundingClientRect().width;
+  const h = els.mineStage.clientHeight;
+  const center = Math.round((localX / w) * (SURFACE_BINS - 1));
+
+  // Small blade footprint: roughly 26–38px on desktop.
+  const bladeHalfPx = 14 + Math.min(5, state.level * 1.3);
+  const halfBins = Math.max(2, Math.round((bladeHalfPx / w) * (SURFACE_BINS - 1)));
+  const depthGain = Math.min(29, 10 + Math.max(0, downwardSpeed) * .18 + state.level * 1.2);
+
+  for (let i = center - halfBins; i <= center + halfBins; i++) {
+    if (i < 0 || i >= SURFACE_BINS) continue;
+    const d = Math.abs(i - center) / Math.max(1, halfBins);
+    const shovelShape = Math.pow(Math.max(0, 1 - d), .72);
+    const jagged = .82 + Math.random() * .34;
+    surfaceProfile[i] = Math.min(h - 14, surfaceProfile[i] + depthGain * shovelShape * jagged);
+  }
+
+  // Give the cut a little real-earth asymmetry rather than a perfect geometric bowl.
+  const nudge = Math.random() < .5 ? -1 : 1;
+  const edge = center + nudge * halfBins;
+  if (edge >= 0 && edge < SURFACE_BINS) {
+    surfaceProfile[edge] = Math.max(0, surfaceProfile[edge] - 2 - Math.random() * 5);
+  }
+
+  drawCover();
+  persist();
+}
+
+function revealCompaniesNear(localX) {
+  let found = null;
+
+  companies.forEach(company => {
+    if (state.discovered.has(company.name)) return;
+
+    const p = getCompanyPoint(company);
+    const industry = getIndustryFromX(localX);
+    if (company.industry !== industry) return;
+
+    const excavation = surfaceDepthAtX(p.x);
+    if (Math.abs(p.x - localX) <= 34 && excavation >= p.y - 22) {
+      state.discovered.add(company.name);
+      const ore = [...document.querySelectorAll(".ore")].find(el => el.dataset.name === company.name);
+      if (ore) ore.classList.add("revealed");
+      found = company;
+    }
+  });
+
+  if (found) {
+    showToast(`発見：${found.displayName}`);
+    setTimeout(() => openCompany(found), 220);
+  }
+
+  return found;
+}
+
+function getIndustryFromX(x) {
+  const width = els.mineStage.getBoundingClientRect().width;
+  const idx = Math.max(0, Math.min(industries.length - 1, Math.floor((x / width) * industries.length)));
+  return industries[idx];
+}
+
+function getDepthFromY(y) {
+  return Math.round((y / els.mineStage.clientHeight) * 1250);
+}
+
+function spawnSoilClods(localX, localY, impactSpeed) {
+  const count = Math.max(7, Math.min(16, Math.round(7 + impactSpeed * .08)));
+
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement("i");
+    el.className = "soil-clod";
+    const size = 5 + Math.random() * 11;
+    const hue = [
+      "#9b6132", "#81502c", "#b06d36", "#6f4529", "#c07a3d"
+    ][Math.floor(Math.random() * 5)];
+
+    el.style.setProperty("--size", `${size}px`);
+    el.style.setProperty("--clod", hue);
+    el.style.setProperty("--rot", `${Math.random() * 180}deg`);
+    els.soilPhysicsLayer.appendChild(el);
+
+    clods.push({
+      el,
+      x: localX + (Math.random() - .5) * 18,
+      y: localY - 2 - Math.random() * 8,
+      vx: (Math.random() - .5) * (2.8 + impactSpeed * .035),
+      vy: -1.7 - Math.random() * (3.1 + impactSpeed * .026),
+      rot: Math.random() * 180,
+      rv: (Math.random() - .5) * 8,
+      bounces: 0,
+      age: 0
+    });
+  }
+
+  const flash = document.createElement("i");
+  flash.className = "impact-flash";
+  flash.style.left = `${localX}px`;
+  flash.style.top = `${localY}px`;
+  els.soilPhysicsLayer.appendChild(flash);
+  setTimeout(() => flash.remove(), 380);
+}
+
+function updateSoilPhysics(dt) {
+  const h = els.mineStage.clientHeight;
+  const w = els.mineStage.getBoundingClientRect().width;
+
+  clods = clods.filter(p => {
+    p.age += dt;
+    p.vy += 25 * dt;
+    p.vx *= Math.pow(.985, dt * 60);
+    p.x += p.vx * dt * 60;
+    p.y += p.vy * dt * 60;
+    p.rot += p.rv * dt * 60;
+
+    if (p.x < 0 || p.x > w) {
+      p.vx *= -.35;
+      p.x = Math.max(1, Math.min(w - 1, p.x));
+    }
+
+    const ground = surfaceDepthAtX(p.x);
+    if (p.vy > 0 && p.y >= ground - 2) {
+      p.y = ground - 2;
+      p.vy *= -.27;
+      p.vx *= .58;
+      p.rv *= .62;
+      p.bounces += 1;
+    }
+
+    const opacity = p.age > 1.35 ? Math.max(0, 1 - (p.age - 1.35) / .55) : 1;
+    p.el.style.left = `${p.x}px`;
+    p.el.style.top = `${p.y}px`;
+    p.el.style.opacity = opacity;
+    p.el.style.transform = `translate(-50%, -50%) rotate(${p.rot}deg)`;
+
+    if (p.age > 1.9 || p.y > h + 30 || p.bounces > 4) {
+      p.el.remove();
+      return false;
+    }
+    return true;
+  });
+}
+
+function getShovelTipClient() {
+  const length = 160;
+  const rad = shovelPhysics.angle * Math.PI / 180;
+  return {
+    x: shovelPhysics.x + Math.sin(rad) * length,
+    y: shovelPhysics.y + Math.cos(rad) * length
+  };
+}
+
+function getShovelDock() {
+  const rect = els.mineStage.getBoundingClientRect();
+  const sidebarAllowance = window.innerWidth > 840 ? 24 : 18;
+  return {
+    x: Math.max(42, Math.min(window.innerWidth - 42, rect.right - sidebarAllowance - 42)),
+    y: Math.max(96, Math.min(window.innerHeight - 230, 116))
+  };
+}
+
+function setShovelDockInstant() {
+  const d = getShovelDock();
+  shovelPhysics.x = d.x;
+  shovelPhysics.y = d.y;
+  shovelPhysics.targetX = d.x;
+  shovelPhysics.targetY = d.y;
+  els.shovel.style.left = `${d.x}px`;
+  els.shovel.style.top = `${d.y}px`;
+  els.shovelDockLabel.style.left = `${d.x}px`;
+  els.shovelDockLabel.style.top = `${d.y}px`;
+}
+
+function beginShovelHold(e) {
+  if (e.button !== undefined && e.button !== 0) return;
+  e.preventDefault();
+  document.body.classList.add("dragging-shovel");
+  shovelPhysics.holding = true;
+  shovelPhysics.pointerId = e.pointerId;
+  els.shovel.classList.add("holding");
+
+  clearTimeout(shovelPhysics.holdTimer);
+  shovelPhysics.holdTimer = setTimeout(() => {
+    if (!shovelPhysics.holding) return;
+
+    shovelPhysics.grabbed = true;
+    shovelPhysics.digArmed = true;
+    shovelPhysics.targetX = e.clientX;
+    shovelPhysics.targetY = e.clientY;
+    els.shovel.classList.add("grabbed");
+    els.shovelDockLabel.classList.add("hidden");
+    els.mineStage.classList.add("shovel-active");
+    els.hint.classList.add("hidden");
+
+    if (navigator.vibrate) navigator.vibrate(18);
+    showToast("シャベルを掴みました。上から地面へ刺してください。");
+  }, 260);
+}
+
+function moveShovelPointer(e) {
+  if (!shovelPhysics.holding && !shovelPhysics.grabbed) return;
+  if (shovelPhysics.pointerId !== null && e.pointerId !== shovelPhysics.pointerId) return;
+
+  if (shovelPhysics.grabbed) {
+    e.preventDefault();
+    shovelPhysics.targetX = e.clientX;
+    shovelPhysics.targetY = e.clientY;
+  }
+}
+
+function releaseShovel(e) {
+  if (shovelPhysics.pointerId !== null && e.pointerId !== undefined && e.pointerId !== shovelPhysics.pointerId) return;
+
+  clearTimeout(shovelPhysics.holdTimer);
+  document.body.classList.remove("dragging-shovel");
+  shovelPhysics.holding = false;
+  shovelPhysics.grabbed = false;
+  shovelPhysics.pointerId = null;
+  shovelPhysics.digArmed = true;
+  els.shovel.classList.remove("holding", "grabbed");
+  els.shovelDockLabel.classList.remove("hidden");
+  els.mineStage.classList.remove("shovel-active");
+
+  const d = getShovelDock();
+  shovelPhysics.targetX = d.x;
+  shovelPhysics.targetY = d.y;
+}
+
+function handleShovelCollision() {
+  if (!shovelPhysics.grabbed || shovelPhysics.impactCooldown > 0) return;
+
+  const stageRect = els.mineStage.getBoundingClientRect();
+  const tip = getShovelTipClient();
+
+  if (
+    tip.x < stageRect.left ||
+    tip.x > stageRect.right ||
+    tip.y < stageRect.top - 18 ||
+    tip.y > stageRect.bottom + 18
+  ) {
+    shovelPhysics.previousTipY = null;
+    return;
+  }
+
+  const localX = tip.x - stageRect.left;
+  const localY = tip.y - stageRect.top;
+  const surfaceY = surfaceDepthAtX(localX);
+  const surfaceClientY = stageRect.top + surfaceY;
+
+  // Re-arm only after the blade has been lifted clearly ABOVE the current soil surface.
+  if (!shovelPhysics.digArmed) {
+    if (tip.y < surfaceClientY - 12) shovelPhysics.digArmed = true;
+    else {
+      // Solid-earth collision: don't allow the shovel to continue through side/bottom soil.
+      if (tip.y > surfaceClientY + 9) {
+        const correction = tip.y - (surfaceClientY + 9);
+        shovelPhysics.y -= correction * .8;
+        shovelPhysics.vy = Math.min(0, shovelPhysics.vy * -.08);
+      }
+      shovelPhysics.previousTipY = tip.y;
+      return;
+    }
+  }
+
+  const previous = shovelPhysics.previousTipY ?? tip.y;
+  const crossedFromAbove = previous <= surfaceClientY + 3 && tip.y >= surfaceClientY - 1;
+  const downwardSpeed = Math.max(0, shovelPhysics.vy);
+
+  if (crossedFromAbove && downwardSpeed > .55 && shovelPhysics.digArmed) {
+state.xp += 4;
+
+    if (state.xp >= 20) {
+      state.level += 1;
+      state.xp = 0;
+      showToast(`DIG POWER が Lv.${state.level} に上がりました`);
+    }
+
+    carveWithShovel(localX, downwardSpeed);
+    const newSurface = surfaceDepthAtX(localX);
+
+    spawnSoilClods(localX, newSurface, downwardSpeed);
+    revealCompaniesNear(localX);
+
+    state.deepest = Math.max(state.deepest, getDepthFromY(newSurface));
+    shovelPhysics.digArmed = false;
+    shovelPhysics.impactCooldown = .13;
+    shovelPhysics.vy *= -.12;
+
+    // Collision response: the metal blade visibly meets resistance from the soil.
+    const correctedClientSurface = stageRect.top + newSurface;
+    const newTip = getShovelTipClient();
+    if (newTip.y > correctedClientSurface + 8) {
+      shovelPhysics.y -= (newTip.y - correctedClientSurface - 8);
+    }
+
+    if (navigator.vibrate) navigator.vibrate(10);
+    updateStatus();
+  }
+
+  shovelPhysics.previousTipY = getShovelTipClient().y;
+}
+
+function physicsFrame(now) {
+  const dt = Math.min(.032, Math.max(.001, (now - lastPhysicsTime) / 1000));
+  lastPhysicsTime = now;
+
+  const spring = shovelPhysics.grabbed ? 34 : 18;
+  const damping = shovelPhysics.grabbed ? .78 : .82;
+
+  shovelPhysics.vx += (shovelPhysics.targetX - shovelPhysics.x) * spring * dt;
+  shovelPhysics.vy += (shovelPhysics.targetY - shovelPhysics.y) * spring * dt;
+  shovelPhysics.vx *= Math.pow(damping, dt * 60);
+  shovelPhysics.vy *= Math.pow(damping, dt * 60);
+
+  shovelPhysics.x += shovelPhysics.vx * dt * 60;
+  shovelPhysics.y += shovelPhysics.vy * dt * 60;
+
+  const targetAngle = shovelPhysics.grabbed
+    ? Math.max(-22, Math.min(22, shovelPhysics.vx * .7))
+    : 7;
+
+  shovelPhysics.angleV += (targetAngle - shovelPhysics.angle) * 22 * dt;
+  shovelPhysics.angleV *= Math.pow(.76, dt * 60);
+  shovelPhysics.angle += shovelPhysics.angleV * dt * 60;
+
+  if (shovelPhysics.impactCooldown > 0) {
+    shovelPhysics.impactCooldown = Math.max(0, shovelPhysics.impactCooldown - dt);
+  }
+
+  handleShovelCollision();
+  updateSoilPhysics(dt);
+
+  els.shovel.style.left = `${shovelPhysics.x}px`;
+  els.shovel.style.top = `${shovelPhysics.y}px`;
+  els.shovel.style.setProperty("--shovel-angle", `${shovelPhysics.angle}deg`);
+
+  if (!shovelPhysics.grabbed) {
+    els.shovelDockLabel.style.left = `${shovelPhysics.x}px`;
+    els.shovelDockLabel.style.top = `${shovelPhysics.y}px`;
+  }
+
+  requestAnimationFrame(physicsFrame);
+}
+
+function sourceClass(sourceType) {
+  if (sourceType === "公式") return "official";
+  if (sourceType === "IR") return "ir";
+  if (sourceType === "第三者") return "third";
+  return "";
+}
+
+function renderDetail(company, tab) {
+  let section = company.details[tab];
+
+  if (!section && tab === "benefits") {
+    const compensationFacts = company.details.compensation?.facts || [];
+    const benefitFacts = compensationFacts.filter(row =>
+      /福利厚生|住宅|社宅|寮|退職|年金|持株|育児|介護|カフェテリア|手当/.test(row.join(" "))
+    );
+    section = {
+      summary: "公開済みの待遇情報から福利厚生関連を抽出。今後、住宅・資産形成・育児介護・学習支援を独立項目として拡充します。",
+      facts: benefitFacts.length ? benefitFacts : [
+        ["福利厚生", "公式採用情報・人的資本資料から順次追加予定。", "未評価"]
+      ]
+    };
+  }
+
+  if (!section) return;
+
+  els.detailBody.innerHTML = `
+    <p class="detail-summary">${section.summary}</p>
+    <div class="fact-list">
+      ${section.facts.map(([label, value, source]) => `
+        <div class="fact-row">
+          <div class="fact-label">${label}</div>
+          <div class="fact-value">${value}</div>
+          <span class="source-pill ${sourceClass(source)}">${source}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+
+  els.detailTabs.querySelectorAll(".detail-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.detail === tab);
+  });
+}
+
+function openCompany(company) {
+  state.selectedCompany = company;
+  state.detailTab = "compensation";
+
+  document.getElementById("dialogIndustry").textContent = company.industry;
+  document.getElementById("dialogName").textContent = company.displayName;
+  document.getElementById("dialogSummary").textContent = company.summary;
+
+  els.snapshotGrid.innerHTML = company.snapshot.map(([label, value, note]) => `
+    <div class="snapshot-card">
+      <small>${label}</small>
+      <strong>${value}</strong>
+      <span>${note}</span>
+    </div>
+  `).join("");
+
+  els.dialogSources.innerHTML = company.sources.length
+    ? company.sources.map(([title, type, url]) => `
+        <a class="source-link" href="${url}" target="_blank" rel="noopener">
+          <strong>${title}</strong>
+          <span>${type} ↗</span>
+        </a>
+      `).join("")
+    : `<div class="source-link"><strong>詳細データ収集中</strong><span>公式資料を順次追加</span></div>`;
+
+  document.getElementById("saveCompanyBtn").textContent =
+    state.saved.has(company.name) ? "保存済み" : "コレクションに保存";
+
+  renderDetail(company, "compensation");
+  els.companyDialog.showModal();
+}
+
+function saveCurrentCompany() {
+  if (!state.selectedCompany) return;
+  state.saved.add(state.selectedCompany.name);
+  persist();
+  renderCollection();
+  document.getElementById("saveCompanyBtn").textContent = "保存済み";
+  showToast("コレクションに保存しました");
+}
+
+function renderCollection() {
+  const savedCompanies = companies.filter(c =>
+    state.saved.has(c.name) &&
+    (state.collectionFilter === "ALL" || c.industry === state.collectionFilter)
+  );
+
+  els.collectionCount.textContent = state.saved.size;
+
+  if (!savedCompanies.length) {
+    els.collectionList.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">◇</div>
+        <strong>${state.saved.size ? "この条件の企業はありません" : "まだ企業がありません"}</strong>
+        <p>${state.saved.size ? "別のカテゴリを選択してください。" : "地中を掘って、最初の企業を発見しましょう。"}</p>
+      </div>`;
+    return;
+  }
+
+  els.collectionList.innerHTML = savedCompanies.map(c => `
+    <article class="company-card">
+      <button class="company-logo" data-open="${c.name}" aria-label="${c.displayName}を開く">${initials(c.name)}</button>
+      <div>
+        <h3>${c.displayName}</h3>
+        <p>${c.summary}</p>
+        <div class="tags">
+          <span>${c.industry}</span>
+          <span>${c.snapshot[0][1]}</span>
+        </div>
+      </div>
+      <button class="card-remove" data-remove="${c.name}" aria-label="${c.displayName}を削除">⌑</button>
+    </article>
+  `).join("");
+
+  els.collectionList.querySelectorAll("[data-open]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const c = companies.find(x => x.name === btn.dataset.open);
+      if (c) openCompany(c);
+    });
+  });
+
+  els.collectionList.querySelectorAll("[data-remove]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.saved.delete(btn.dataset.remove);
+      persist();
+      renderCollection();
+    });
+  });
+}
+
+function updateStatus() {
+els.levelValue.textContent = state.level;
+  els.xpMeter.style.width = `${(state.xp / 20) * 100}%`;
+  els.discoveredValue.textContent = state.discovered.size;
+  els.deepestValue.textContent = state.deepest;
+}
+
+function showToast(message) {
+  clearTimeout(toastTimer);
+  els.toast.textContent = message;
+  els.toast.classList.add("show");
+  toastTimer = setTimeout(() => els.toast.classList.remove("show"), 1900);
+}
+
+
+function resetDemo() {
+  if (!confirm("採掘履歴とコレクションをリセットしますか？")) return;
+  localStorage.removeItem("vi-major-discovered-v2");
+  localStorage.removeItem("vi-major-saved-v2");
+  localStorage.removeItem("vi-major-deepest-v2");
+  localStorage.removeItem("vi-major-surface-v2");
+  location.reload();
+}
+
+function bindEvents() {
+  document.querySelectorAll(".nav-item").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".nav-item").forEach(x => x.classList.toggle("active", x === btn));
+      const nav = btn.dataset.nav;
+      if (nav === "quarry") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (nav === "collection") {
+        document.getElementById("collectionPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+        showToast("保存した企業をコレクションで確認できます");
+      } else if (nav === "report") {
+        const count = state.saved.size;
+        showToast(count ? `保存企業 ${count} 社。コレクションから比較できます` : "まず企業をコレクションに保存してください");
+      }
+    });
+  });
+
+  els.shovel.addEventListener("pointerdown", beginShovelHold, { passive: false });
+  document.addEventListener("pointermove", moveShovelPointer, { passive: false });
+  document.addEventListener("pointerup", releaseShovel);
+  document.addEventListener("pointercancel", releaseShovel);
+  document.addEventListener("selectstart", (e) => {
+    if (shovelPhysics.holding || shovelPhysics.grabbed) e.preventDefault();
+  });
+
+  els.mineStage.addEventListener("pointermove", (e) => {
+    const rect = els.mineStage.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    els.depthFloat.textContent = `${getDepthFromY(y)} m`;
+    els.industryFloat.textContent = getIndustryFromX(x);
+    els.depthFloat.style.left = `${e.clientX + 14}px`;
+    els.depthFloat.style.top = `${e.clientY + 14}px`;
+    els.industryFloat.style.left = `${e.clientX + 14}px`;
+    els.industryFloat.style.top = `${e.clientY + 14}px`;
+    els.depthFloat.style.display = "block";
+    els.industryFloat.style.display = "block";
+  });
+
+  els.mineStage.addEventListener("pointerleave", () => {
+    els.depthFloat.style.display = "none";
+    els.industryFloat.style.display = "none";
+  });
+
+  document.getElementById("dialogClose").addEventListener("click", () => els.companyDialog.close());
+  document.getElementById("saveCompanyBtn").addEventListener("click", saveCurrentCompany);
+document.getElementById("resetBtn").addEventListener("click", resetDemo);
+
+  els.detailTabs.querySelectorAll(".detail-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (!state.selectedCompany) return;
+      state.detailTab = btn.dataset.detail;
+      renderDetail(state.selectedCompany, state.detailTab);
+    });
+  });
+
+  document.getElementById("clearCollectionBtn").addEventListener("click", () => {
+    state.saved.clear();
+    persist();
+    renderCollection();
+  });
+
+  // Replace collection filters with current large-company categories.
+  const tabs = document.querySelector(".collection-tabs");
+  tabs.innerHTML = `
+    <button class="chip active" data-filter="ALL">すべて</button>
+    ${industries.map(industry => `<button class="chip" data-filter="${industry}">${industry}</button>`).join("")}
+  `;
+
+  tabs.querySelectorAll(".chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      state.collectionFilter = chip.dataset.filter;
+      tabs.querySelectorAll(".chip").forEach(x => x.classList.toggle("active", x === chip));
+      renderCollection();
+    });
+  });
+
+  document.getElementById("openFilterBtn").addEventListener("click", () => {
+    document.getElementById("industryFilter").value = state.activeIndustryFilter;
+    els.filterDialog.showModal();
+  });
+
+  document.getElementById("filterClose")?.addEventListener("click", () => els.filterDialog.close());
+
+  document.getElementById("applyFilterBtn")?.addEventListener("click", () => {
+    state.activeIndustryFilter = document.getElementById("industryFilter").value;
+    renderOres();
+    els.filterDialog.close();
+    showToast(state.activeIndustryFilter === "ALL"
+      ? "すべての業界を採掘対象にしました"
+      : `${state.activeIndustryFilter} に絞り込みました`);
+  });
+
+  document.getElementById("globalSearch").addEventListener("input", (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) return;
+
+    const found = companies.find(c =>
+      c.name.toLowerCase().includes(q) ||
+      c.displayName.toLowerCase().includes(q) ||
+      c.industry.toLowerCase().includes(q) ||
+      Object.values(c.details).some(section =>
+        section.summary.toLowerCase().includes(q) ||
+        section.facts.some(row => row.join(" ").toLowerCase().includes(q))
+      )
+    );
+
+    if (found) {
+      const p = getCompanyPoint(found);
+      const rect = els.mineStage.getBoundingClientRect();
+      const pageY = window.scrollY + rect.top + p.y;
+      window.scrollTo({ top: pageY - window.innerHeight * .42, behavior: "smooth" });
+      showToast(`${found.displayName} の鉱脈付近へ移動`);
+    }
+  });
+
+  document.getElementById("globalSearch").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    const q = e.currentTarget.value.trim().toLowerCase();
+    if (!q) return;
+    const found = companies.find(c =>
+      c.name.toLowerCase().includes(q) ||
+      c.displayName.toLowerCase().includes(q) ||
+      c.industry.toLowerCase().includes(q) ||
+      c.summary.toLowerCase().includes(q)
+    );
+    if (found) {
+      e.preventDefault();
+      openCompany(found);
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    persist();
+    loadSurfaceProfile();
+    renderOres();
+    drawCover();
+
+    if (!shovelPhysics.grabbed) {
+      const d = getShovelDock();
+      shovelPhysics.targetX = d.x;
+      shovelPhysics.targetY = d.y;
+    }
+  });
+}
+
+function init() {
+  const industryFilter = document.getElementById("industryFilter");
+  if (industryFilter) {
+    industryFilter.innerHTML = `<option value="ALL">すべての業界</option>` +
+      industries.map(x => `<option value="${x}">${x}</option>`).join("");
+  }
+  buildIndustryRuler();
+  loadSurfaceProfile();
+  renderOres();
+  drawCover();
+  renderCollection();
+  updateStatus();
+  bindEvents();
+  setShovelDockInstant();
+  requestAnimationFrame(physicsFrame);
+}
+
+init();
+
+</script>
+</body>
+</html>
