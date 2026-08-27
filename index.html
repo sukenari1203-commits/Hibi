@@ -2093,6 +2093,130 @@ body.mobile-experience .source-pill {
   .device-inner h2 { font-size: 30px; }
 }
 
+
+/* =========================================================
+   v5.1 — the SIGNBOARDS AND THE GROUND scroll as ONE WORLD
+   ========================================================= */
+.quarry-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(110,76,31,.48) rgba(231,220,203,.58);
+  background: #2d1e16;
+}
+.quarry-scroll::-webkit-scrollbar { height: 11px; }
+.quarry-scroll::-webkit-scrollbar-track { background: rgba(231,220,203,.72); }
+.quarry-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg,#9a7130,#c99a2e);
+  border: 2px solid rgba(231,220,203,.72);
+  border-radius: 999px;
+}
+
+.quarry-world {
+  --quarry-world-width: 2160px;
+  width: max(100%, var(--quarry-world-width));
+  min-width: var(--quarry-world-width);
+}
+
+/* Sky/grass and underground share exactly the same horizontal world width. */
+.quarry-world .hero-sky,
+.quarry-world .mine-wrap,
+.quarry-world .mine-stage {
+  width: 100%;
+}
+
+/* The heading stays readable while the terrain moves horizontally beneath it. */
+.quarry-world .hero-copy {
+  position: sticky;
+  left: 0;
+  width: min(100vw, 1180px);
+  max-width: 100vw;
+  z-index: 13;
+  pointer-events: none;
+}
+.quarry-world .hero-copy button {
+  pointer-events: auto;
+}
+
+/* No independent signboard scrolling anymore.
+   Nine signboards are centered over the nine equal mining zones. */
+.quarry-world .industry-ruler {
+  display: grid !important;
+  grid-template-columns: repeat(9, 1fr) !important;
+  gap: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  scroll-snap-type: none !important;
+  scrollbar-width: none !important;
+}
+.quarry-world .industry-ruler::-webkit-scrollbar { display: none !important; }
+
+.quarry-world .industry-ruler button {
+  width: 172px !important;
+  min-width: 0 !important;
+  max-width: calc(100% - 24px);
+  min-height: 68px !important;
+  justify-self: center;
+  align-self: end;
+  flex: initial !important;
+  scroll-snap-align: none !important;
+}
+
+/* Small visual cue that the whole quarry continues sideways. */
+.quarry-scroll-shell {
+  position: relative;
+}
+.quarry-scroll-cue {
+  position: absolute;
+  z-index: 25;
+  right: 14px;
+  top: 322px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #6f5017;
+  background: rgba(255,250,240,.9);
+  border: 1px solid rgba(112,78,24,.2);
+  box-shadow: 0 8px 22px rgba(46,31,15,.12);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  transition: opacity .2s ease;
+}
+.quarry-scroll-cue.hidden { opacity: 0; }
+
+body.mobile-experience .quarry-world {
+  --quarry-world-width: 1710px;
+}
+body.mobile-experience .quarry-world .hero-copy {
+  width: 100vw;
+}
+body.mobile-experience .quarry-world .industry-ruler {
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 42px !important;
+  padding: 0 !important;
+}
+body.mobile-experience .quarry-world .industry-ruler button {
+  width: 158px !important;
+  max-width: calc(100% - 18px);
+}
+body.mobile-experience .quarry-scroll-cue {
+  top: 342px;
+  right: 10px;
+  font-size: 8px;
+}
+
 </style>
 </head>
 <body>
@@ -2123,6 +2247,10 @@ body.mobile-experience .source-pill {
 
   <main class="app-shell">
     <section class="quarry-panel" id="quarryView">
+      <div class="quarry-scroll-shell">
+        <div class="quarry-scroll-cue" id="quarryScrollCue">地面ごと横にスクロール →</div>
+        <div class="quarry-scroll" id="quarryScroll">
+          <div class="quarry-world" id="quarryWorld">
       <div class="hero-sky">
         <div class="cloud c1"></div>
         <div class="cloud c2"></div>
@@ -2175,6 +2303,9 @@ body.mobile-experience .source-pill {
 
           <div class="depth-float" id="depthFloat">0 m</div>
           <div class="industry-float" id="industryFloat">AI・機械学習</div>
+        </div>
+      </div>
+          </div>
         </div>
       </div>
 
@@ -3354,6 +3485,34 @@ function seededOffset(name) {
   return ((h % 6000) / 6000) * .72 + .14;
 }
 
+
+function setupQuarryHorizontalScroll() {
+  const scroller = document.getElementById("quarryScroll");
+  const cue = document.getElementById("quarryScrollCue");
+  if (!scroller) return;
+
+  const updateCue = () => {
+    if (!cue) return;
+    cue.classList.toggle("hidden", scroller.scrollLeft > 36);
+  };
+  scroller.addEventListener("scroll", updateCue, { passive: true });
+  updateCue();
+}
+
+function centerIndustryZoneHorizontally(industry) {
+  const scroller = document.getElementById("quarryScroll");
+  const stage = document.getElementById("mineStage");
+  if (!scroller || !stage) return;
+
+  const index = industries.indexOf(industry);
+  if (index < 0) return;
+
+  const zoneWidth = stage.clientWidth / industries.length;
+  const targetCenter = (index + .5) * zoneWidth;
+  const targetLeft = Math.max(0, targetCenter - scroller.clientWidth / 2);
+  scroller.scrollTo({ left: targetLeft, behavior: "smooth" });
+}
+
 function buildIndustryRuler() {
   els.industryRuler.innerHTML = "";
   els.industryRuler.style.gridTemplateColumns = `repeat(${industries.length}, 1fr)`;
@@ -3364,6 +3523,7 @@ function buildIndustryRuler() {
     b.dataset.industry = industry;
     b.addEventListener("click", () => {
       els.industryRuler.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+      centerIndustryZoneHorizontally(industry);
       const target = companies.find(c => c.industry === industry);
       const depth = target ? target.depth : 300;
       const stageTop = els.mineWrap.offsetTop + (depth / 1250) * els.mineStage.clientHeight;
@@ -4233,6 +4393,7 @@ function init() {
       industries.map(x => `<option value="${x}">${x}</option>`).join("");
   }
   buildIndustryRuler();
+  setupQuarryHorizontalScroll();
   loadSurfaceProfile();
   renderOres();
   drawCover();
