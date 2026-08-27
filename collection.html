@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="theme-color" content="#11110f" />
+<title>VENTURE INFO — Gem Collection</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --black:#11110f;--ink:#211b14;--cream:#f5efe4;--paper:#fbf7ef;
+  --gold:#c99a2e;--gold2:#e2b646;--line:rgba(74,55,27,.15);--muted:#7b7063;
+}
+html{background:var(--cream);scroll-behavior:smooth}
+body{margin:0;color:var(--ink);background:
+  radial-gradient(circle at 12% 6%,rgba(201,154,46,.08),transparent 28%),
+  linear-gradient(#f8f2e8,#efe5d6);
+  font-family:"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;min-height:100vh}
+button,input{font:inherit}
+button{cursor:pointer}
+.topbar{
+  height:72px;position:sticky;top:0;z-index:30;display:grid;
+  grid-template-columns:270px 1fr 270px;align-items:center;padding:0 28px;
+  background:#0d0e0d;color:#fff;border-bottom:1px solid rgba(255,255,255,.08)
+}
+.brand{display:flex;gap:11px;align-items:center;color:inherit;text-decoration:none}
+.brand-mark{width:38px;height:38px;display:grid;place-items:center;color:#111;border-radius:8px;background:linear-gradient(145deg,#d5af4a,#9e731d);font-size:24px}
+.brand strong{display:block;color:#e2b646;font-family:Georgia,serif;font-size:20px;letter-spacing:.06em}
+.brand small{display:block;margin-top:2px;color:rgba(255,255,255,.64);font-size:9px;letter-spacing:.13em}
+.top-title{text-align:center;color:#d8b351;font-size:10px;font-weight:900;letter-spacing:.18em}
+.back-btn{justify-self:end;color:#e2b646;text-decoration:none;border:1px solid rgba(216,169,52,.5);border-radius:999px;padding:9px 13px;font-size:10px}
+.hero{padding:46px 5vw 34px;border-bottom:1px solid var(--line);background:
+  linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,.16)),
+  repeating-linear-gradient(90deg,rgba(119,85,35,.025) 0 1px,transparent 1px 18px)}
+.eyebrow{margin:0 0 8px;color:#9a6d16;font-size:10px;font-weight:900;letter-spacing:.18em}
+.hero h1{margin:0;font:500 clamp(34px,5vw,58px)/1 Georgia,serif;color:#17130f}
+.hero p{max-width:740px;margin:13px 0 0;color:#74685a;font-size:12px;line-height:1.75}
+.toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:18px 5vw;border-bottom:1px solid var(--line);background:rgba(251,247,239,.8);backdrop-filter:blur(10px)}
+.count{font:500 18px Georgia,serif}
+.count span{color:#9b6f18}
+.filters{display:flex;gap:7px;overflow-x:auto;padding-bottom:3px}
+.chip{white-space:nowrap;border:1px solid var(--line);border-radius:999px;background:#fffaf1;color:#6a5d4d;padding:8px 10px;font-size:9px;font-weight:800}
+.chip.active{background:#15140f;color:#e4b947;border-color:#15140f}
+.atlas{padding:30px 5vw 70px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
+.specimen{
+  position:relative;min-height:270px;border:1px solid rgba(91,65,27,.16);border-radius:14px;
+  background:linear-gradient(145deg,rgba(255,255,255,.8),rgba(241,230,212,.78));
+  box-shadow:0 16px 40px rgba(56,38,19,.08);overflow:hidden;transition:.2s ease;text-align:left;padding:0
+}
+.specimen:hover{transform:translateY(-4px);box-shadow:0 22px 48px rgba(56,38,19,.13);border-color:rgba(171,121,24,.35)}
+.specimen-top{height:166px;display:grid;place-items:center;background:
+  radial-gradient(circle at 50% 70%,rgba(104,74,35,.12),transparent 34%),
+  linear-gradient(#f8f1e6,#eadfce);border-bottom:1px solid rgba(85,61,28,.11)}
+.gem-wrap{position:relative;width:104px;height:104px;display:grid;place-items:center}
+.gem-shadow{position:absolute;left:14px;right:14px;bottom:4px;height:12px;background:radial-gradient(ellipse,rgba(31,21,13,.25),transparent 70%)}
+.gem{
+  --hue:0deg;width:78px;height:72px;display:grid;place-items:center;color:#fff3ca;
+  font:900 18px/1 Georgia,serif;
+  clip-path:polygon(50% 0,88% 17%,100% 55%,72% 94%,27% 100%,0 57%,14% 18%);
+  background:
+    linear-gradient(140deg,rgba(255,255,255,.48),transparent 27%),
+    linear-gradient(34deg,rgba(255,228,137,.28),transparent 48%),
+    linear-gradient(145deg,#d6a63d,#75501a 76%);
+  filter:hue-rotate(var(--hue));
+  border-radius:14px;
+  box-shadow:inset 0 -9px 16px rgba(40,24,7,.24),0 13px 22px rgba(46,30,13,.23)
+}
+.gem::after{content:"";width:30px;height:14px;border-radius:50%;border-top:1px solid rgba(255,255,255,.48);transform:rotate(-24deg)}
+.specimen-body{padding:16px}
+.specimen-body small{display:block;color:#967022;font-size:8px;font-weight:900;letter-spacing:.12em}
+.specimen-body h2{margin:6px 0 7px;font:500 18px/1.15 Georgia,serif}
+.specimen-body p{margin:0;color:#786b5b;font-size:9px;line-height:1.55}
+.depth-tag{position:absolute;top:12px;right:12px;padding:5px 7px;border-radius:99px;background:rgba(17,17,15,.9);color:#e2b646;font-size:8px;font-weight:900}
+.empty{grid-column:1/-1;min-height:420px;display:grid;place-items:center;text-align:center;border:1px dashed rgba(91,65,27,.22);border-radius:16px;background:rgba(255,255,255,.3);color:#756858}
+.empty b{display:block;margin:12px 0 6px;color:#2d251d;font:500 25px Georgia,serif}
+.empty a{display:inline-block;margin-top:14px;color:#111;background:#e0b547;text-decoration:none;padding:11px 14px;border-radius:8px;font-size:10px;font-weight:900}
+.dialog{width:min(860px,calc(100vw - 24px));max-height:88vh;overflow:auto;border:1px solid rgba(91,65,27,.22);border-radius:16px;padding:28px;background:#fbf6ec;color:#221a13;box-shadow:0 30px 100px rgba(0,0,0,.32)}
+.dialog::backdrop{background:rgba(0,0,0,.62);backdrop-filter:blur(6px)}
+.close{position:absolute;right:15px;top:12px;border:0;background:transparent;color:#6e6255;font-size:24px}
+.dhero{display:grid;grid-template-columns:92px 1fr auto;gap:18px;align-items:center;padding-right:30px}
+.dgem{width:86px;height:80px;display:grid;place-items:center;color:#fff3ca;font:900 20px Georgia,serif;clip-path:polygon(50% 0,88% 17%,100% 55%,72% 94%,27% 100%,0 57%,14% 18%);background:linear-gradient(145deg,#d6a63d,#75501a 76%);filter:hue-rotate(var(--hue))}
+.dkicker{color:#a7791d;font-size:9px;font-weight:900;letter-spacing:.14em}
+.dhero h2{margin:5px 0 7px;font:500 34px Georgia,serif}
+.dhero p{margin:0;color:#6e6255;font-size:11px;line-height:1.65}
+.remove{border:0;border-radius:8px;background:#15140f;color:#e2b646;padding:12px 14px;font-size:9px;font-weight:900}
+.snapshot{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:24px 0 18px}
+.snap{padding:13px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.6)}
+.snap small{display:block;color:#877969;font-size:8px;font-weight:900;letter-spacing:.1em}
+.snap strong{display:block;margin-top:7px;font:500 15px Georgia,serif}
+.snap span{display:block;margin-top:5px;color:#7d7060;font-size:8px;line-height:1.4}
+.tabs{display:flex;gap:3px;overflow-x:auto;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.tab{white-space:nowrap;border:0;background:transparent;color:#746757;padding:13px 11px;font-size:9px;font-weight:800}
+.tab.active{color:#815d13;border-bottom:2px solid #c99a2e}
+.detail{padding:18px 0}
+.summary{color:#41372d;font-size:12px;line-height:1.75}
+.fact{display:grid;grid-template-columns:145px 1fr auto;gap:12px;padding:11px 0;border-bottom:1px solid rgba(75,55,27,.1)}
+.fact label{color:#7a6d5c;font-size:9px;font-weight:900}
+.fact div{font-size:11px;line-height:1.55}
+.pill{white-space:nowrap;padding:4px 7px;border-radius:99px;background:#eee4d2;color:#8c681d;font-size:8px;font-weight:900}
+.sources{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:18px}
+.source{display:block;padding:10px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.48);color:#33291f;text-decoration:none;font-size:9px}
+@media(max-width:720px){
+  .topbar{height:60px;padding:0 14px;grid-template-columns:1fr auto}.top-title{display:none}.brand strong{font-size:16px}.brand small{display:none}
+  .hero{padding:30px 18px 24px}.toolbar{display:block;padding:14px 18px}.filters{margin-top:10px}.atlas{padding:20px 14px 80px;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .specimen{min-height:225px}.specimen-top{height:135px}.gem{width:66px;height:62px}.specimen-body{padding:12px}.specimen-body h2{font-size:14px}.specimen-body p{font-size:8px}
+  .dialog{padding:22px 16px}.dhero{grid-template-columns:68px 1fr}.dgem{width:64px;height:60px}.dhero h2{font-size:26px}.remove{grid-column:1/-1}.snapshot{grid-template-columns:repeat(2,1fr)}
+  .fact{grid-template-columns:90px 1fr}.pill{grid-column:2;justify-self:start}.sources{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <span class="brand-mark">◇</span>
+    <span><strong>VENTURE INFO</strong><small>DISCOVER. DIG. INVEST.</small></span>
+  </a>
+  <div class="top-title">MY GEM ATLAS · SAVED COMPANIES</div>
+  <a class="back-btn" id="backToMine" href="index.html">⛏ 採掘場へ</a>
+</header>
+
+<section class="hero">
+  <p class="eyebrow">MY FINDINGS · SPECIMEN ARCHIVE</p>
+  <h1>鉱石図鑑</h1>
+  <p>採掘場で保存した企業を、発見した宝石の標本として並べています。鉱石をタップすると企業情報を開けます。</p>
+</section>
+
+<div class="toolbar">
+  <div class="count">保存した鉱石 <span id="count">0</span> 個</div>
+  <div class="filters" id="filters"></div>
+</div>
+
+<main class="atlas" id="atlas"></main>
+
+<dialog class="dialog" id="companyDialog">
+  <button class="close" id="closeDialog">×</button>
+  <div class="dhero">
+    <div class="dgem" id="dialogGem">VI</div>
+    <div>
+      <div class="dkicker" id="dialogIndustry"></div>
+      <h2 id="dialogName"></h2>
+      <p id="dialogSummary"></p>
+    </div>
+    <button class="remove" id="removeBtn">コレクションから外す</button>
+  </div>
+  <div class="snapshot" id="snapshot"></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="detail" id="detail"></div>
+  <div class="sources" id="sources"></div>
+</dialog>
+
+<script>
+const ANALYTICS_CONFIG = {
+  supabaseUrl: "https://ioznepuggdzagmckljbp.supabase.co",
+  publishableKey: "sb_publishable_JAPUbLW_UTupYjKxmWFCXg_NicyJxn5"
+};
+const SESSION_KEY = "vi-analytics-session-v1";
+const sessionId = localStorage.getItem(SESSION_KEY);
+const catalog = JSON.parse(localStorage.getItem("vi-company-catalog-v1") || "[]");
+let saved = new Set(JSON.parse(localStorage.getItem("vi-major-saved-v2") || "[]"));
+let activeFilter = "ALL";
+let selected = null;
+
+const industries = [...new Set(catalog.map(c => c.industry).filter(Boolean))];
+
+function hashHue(text){
+  let h=0; for(const ch of text) h=(h*31+ch.charCodeAt(0))>>>0;
+  return `${(h%300)-150}deg`;
+}
+function initials(name){
+  return String(name||"VI").split(/\s+/).map(x=>x[0]).join("").replace(/\W/g,"").slice(0,2).toUpperCase()||"VI";
+}
+function esc(v){
+  return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+}
+async function track(eventType, payload={}){
+  if(!sessionId) return;
+  try{
+    await fetch(`${ANALYTICS_CONFIG.supabaseUrl}/rest/v1/events`,{
+      method:"POST",
+      headers:{
+        apikey:ANALYTICS_CONFIG.publishableKey,
+        Authorization:`Bearer ${ANALYTICS_CONFIG.publishableKey}`,
+        "Content-Type":"application/json",
+        Prefer:"return=minimal"
+      },
+      body:JSON.stringify([{
+        session_id:sessionId,event_type:eventType,
+        industry:payload.industry||null,company:payload.company||null,
+        x_position:null,depth_m:Number.isFinite(payload.depth_m)?payload.depth_m:null,
+        metadata:payload.metadata||{}
+      }])
+    });
+  }catch(_){}
+}
+function mineHref(){
+  return localStorage.getItem("vi-device-mode-v1")==="mobile" ? "mobile.html" : "index.html";
+}
+document.getElementById("backToMine").href = mineHref();
+
+function renderFilters(){
+  const el=document.getElementById("filters");
+  el.innerHTML=`<button class="chip active" data-filter="ALL">すべて</button>`+
+    industries.map(i=>`<button class="chip" data-filter="${esc(i)}">${esc(i)}</button>`).join("");
+  el.querySelectorAll(".chip").forEach(btn=>btn.addEventListener("click",()=>{
+    activeFilter=btn.dataset.filter;
+    el.querySelectorAll(".chip").forEach(x=>x.classList.toggle("active",x===btn));
+    renderAtlas();
+  }));
+}
+function savedCompanies(){
+  return catalog.filter(c=>saved.has(c.name)&&(activeFilter==="ALL"||c.industry===activeFilter));
+}
+function renderAtlas(){
+  const atlas=document.getElementById("atlas");
+  const rows=savedCompanies();
+  document.getElementById("count").textContent=saved.size;
+
+  if(!catalog.length){
+    atlas.innerHTML=`<div class="empty"><div><div style="font-size:46px;color:#c79b3c">◇</div><b>企業データを準備中</b><div>最新版の採掘場を一度開いてから、図鑑へ戻ってください。</div><a href="${mineHref()}">採掘場を開く</a></div></div>`;
+    return;
+  }
+  if(!rows.length){
+    atlas.innerHTML=`<div class="empty"><div><div style="font-size:46px;color:#c79b3c">◇</div><b>${saved.size?"この業界の鉱石はまだありません":"まだ鉱石がありません"}</b><div>気になる企業を発見したら「コレクションに保存」してください。</div><a href="${mineHref()}">採掘に戻る</a></div></div>`;
+    return;
+  }
+  atlas.innerHTML=rows.map(c=>`
+    <button class="specimen" data-company="${esc(c.name)}">
+      <span class="depth-tag">-${esc(c.depth)}m</span>
+      <div class="specimen-top">
+        <div class="gem-wrap">
+          <div class="gem-shadow"></div>
+          <div class="gem" style="--hue:${hashHue(c.industry+c.name)}">${initials(c.name)}</div>
+        </div>
+      </div>
+      <div class="specimen-body">
+        <small>${esc(c.industry)}</small>
+        <h2>${esc(c.displayName)}</h2>
+        <p>${esc(c.summary)}</p>
+      </div>
+    </button>`).join("");
+
+  atlas.querySelectorAll("[data-company]").forEach(btn=>btn.addEventListener("click",()=>{
+    const c=catalog.find(x=>x.name===btn.dataset.company); if(c) openCompany(c);
+  }));
+}
+function detailKeys(c){
+  const order=["compensation","benefits","stability","culture","workstyle","career"];
+  return order.filter(k=>c.details&&c.details[k]);
+}
+const labels={compensation:"給料・待遇",benefits:"福利厚生",stability:"経営安定性",culture:"社風・人間関係",workstyle:"働き方",career:"成長・キャリア"};
+function renderDetail(c,key){
+  const section=c.details?.[key];
+  const detail=document.getElementById("detail");
+  if(!section){detail.innerHTML="";return}
+  detail.innerHTML=`<p class="summary">${esc(section.summary)}</p>`+
+    (section.facts||[]).map(row=>`<div class="fact"><label>${esc(row[0])}</label><div>${esc(row[1])}</div><span class="pill">${esc(row[2])}</span></div>`).join("");
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===key));
+}
+function openCompany(c){
+  selected=c;
+  document.getElementById("dialogGem").textContent=initials(c.name);
+  document.getElementById("dialogGem").style.setProperty("--hue",hashHue(c.industry+c.name));
+  document.getElementById("dialogIndustry").textContent=c.industry||"";
+  document.getElementById("dialogName").textContent=c.displayName||c.name;
+  document.getElementById("dialogSummary").textContent=c.summary||"";
+  document.getElementById("snapshot").innerHTML=(c.snapshot||[]).map(s=>`<div class="snap"><small>${esc(s[0])}</small><strong>${esc(s[1])}</strong><span>${esc(s[2])}</span></div>`).join("");
+  const keys=detailKeys(c);
+  document.getElementById("tabs").innerHTML=keys.map((k,i)=>`<button class="tab ${i===0?"active":""}" data-tab="${k}">${labels[k]||k}</button>`).join("");
+  document.getElementById("tabs").querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>renderDetail(c,btn.dataset.tab)));
+  renderDetail(c,keys[0]);
+  document.getElementById("sources").innerHTML=(c.sources||[]).map(s=>`<a class="source" href="${esc(s[2])}" target="_blank" rel="noopener"><b>${esc(s[0])}</b><br>${esc(s[1])} ↗</a>`).join("");
+  document.getElementById("companyDialog").showModal();
+  track("company_opened",{industry:c.industry,company:c.displayName,depth_m:c.depth,metadata:{source:"collection_atlas"}});
+}
+document.getElementById("closeDialog").addEventListener("click",()=>document.getElementById("companyDialog").close());
+document.getElementById("removeBtn").addEventListener("click",()=>{
+  if(!selected)return;
+  saved.delete(selected.name);
+  localStorage.setItem("vi-major-saved-v2",JSON.stringify([...saved]));
+  track("company_removed",{industry:selected.industry,company:selected.displayName,depth_m:selected.depth,metadata:{source:"collection_atlas"}});
+  document.getElementById("companyDialog").close();
+  renderAtlas();
+});
+renderFilters();
+renderAtlas();
+track("collection_viewed",{metadata:{saved_count:saved.size}});
+</script>
+</body>
+</html>
