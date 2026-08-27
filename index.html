@@ -1666,6 +1666,108 @@ body.dragging-shovel {
   .detail-tabs { grid-template-columns: repeat(6, minmax(108px, 1fr)); overflow-x:auto; }
 }
 
+
+/* ===== First-visit survey + anonymous analytics ===== */
+.onboarding-dialog {
+  width: min(720px, calc(100vw - 28px));
+  border: 1px solid rgba(85, 61, 25, .22);
+  border-radius: 18px;
+  padding: 0;
+  background: #fbf7ee;
+  color: #211a13;
+  box-shadow: 0 30px 90px rgba(0,0,0,.32);
+}
+.onboarding-dialog::backdrop {
+  background: rgba(15, 14, 12, .72);
+  backdrop-filter: blur(8px);
+}
+.onboarding-inner { padding: 34px; }
+.onboarding-step { font-size: 9px; letter-spacing: .18em; font-weight: 900; color: #9a742f; }
+.onboarding-dialog h2 {
+  margin: 8px 0 8px;
+  font: 500 34px/1.12 Georgia, "Times New Roman", serif;
+}
+.onboarding-lead { margin: 0 0 22px; color: #6f6456; font-size: 12px; line-height: 1.75; }
+.survey-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+}
+.survey-option {
+  display: block;
+  cursor: pointer;
+}
+.survey-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.survey-option span {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border: 1px solid rgba(91, 67, 32, .18);
+  border-radius: 10px;
+  background: #fffaf2;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+  transition: .18s ease;
+}
+.survey-option input:checked + span {
+  background: #171612;
+  color: #e2b646;
+  border-color: #171612;
+  transform: translateY(-1px);
+}
+.survey-divider {
+  height: 1px;
+  margin: 18px 0;
+  background: rgba(91,67,32,.12);
+}
+.survey-option.wide span { min-height: 46px; }
+.survey-footer {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22px;
+}
+.survey-privacy {
+  max-width: 440px;
+  color: #7a6c5a;
+  font-size: 9px;
+  line-height: 1.6;
+}
+.survey-error {
+  min-height: 18px;
+  margin-top: 10px;
+  color: #9f3b2c;
+  font-size: 10px;
+  font-weight: 700;
+}
+.analytics-badge {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 230;
+  display: none;
+  padding: 6px 8px;
+  border-radius: 99px;
+  background: #8a2f27;
+  color: white;
+  font-size: 8px;
+  font-weight: 900;
+}
+@media (max-width: 650px) {
+  .onboarding-inner { padding: 24px 18px; }
+  .survey-options { grid-template-columns: repeat(2, 1fr); }
+  .survey-footer { display: block; }
+  .survey-footer button { width: 100%; margin-top: 14px; }
+}
+
 </style>
 </head>
 <body>
@@ -1864,9 +1966,217 @@ body.dragging-shovel {
     <div class="shovel-blade"></div>
   </div>
 
+
+  <dialog class="onboarding-dialog" id="onboardingDialog">
+    <form class="onboarding-inner" id="onboardingForm">
+      <div class="onboarding-step">STEP 01 · DISCOVERY PROFILE</div>
+      <h2>いま興味がある業界は？</h2>
+      <p class="onboarding-lead">複数選択できます。最初の興味と、実際に掘った企業の違いをもとに発見体験を改善します。</p>
+
+      <div class="survey-options" id="surveyIndustryOptions"></div>
+
+      <div class="survey-divider"></div>
+
+      <label class="survey-option wide">
+        <input type="checkbox" id="surveyNoPreference">
+        <span>まだ特に決まっていない</span>
+      </label>
+
+      <div class="survey-error" id="surveyError"></div>
+
+      <div class="survey-footer">
+        <div class="survey-privacy">
+          サービス改善のため、匿名のアンケート回答・採掘位置・企業の発見/閲覧/保存などの操作データを収集します。
+          氏名・メールアドレスはこのアンケートでは収集しません。
+        </div>
+        <button class="black-btn button-height" type="submit">採掘をはじめる</button>
+      </div>
+    </form>
+  </dialog>
+  <div class="analytics-badge" id="analyticsBadge">ANALYTICS NOT CONNECTED</div>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
+
+/* ===== VENTURE INFO anonymous analytics ===== */
+const ANALYTICS_CONFIG = {
+  supabaseUrl: "https://ioznepuggdzagmckljbp.supabase.co",
+  publishableKey: "sb_publishable_JAPUbLW_UTupYjKxmWFCXg_NicyJxn5"
+};
+
+const ANALYTICS_SESSION_KEY = "vi-analytics-session-v1";
+const ONBOARDING_KEY = "vi-onboarding-complete-v1";
+const SURVEY_LOCAL_KEY = "vi-survey-response-v1";
+
+function makeAnalyticsSessionId() {
+  if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+  return `vi-${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`;
+}
+
+const analyticsSessionId =
+  localStorage.getItem(ANALYTICS_SESSION_KEY) || makeAnalyticsSessionId();
+
+localStorage.setItem(ANALYTICS_SESSION_KEY, analyticsSessionId);
+
+let analyticsQueue = [];
+let analyticsFlushTimer = null;
+
+function analyticsReady() {
+  return /^https:\/\/.+\.supabase\.co\/?$/.test(ANALYTICS_CONFIG.supabaseUrl) &&
+    ANALYTICS_CONFIG.publishableKey.startsWith("sb_publishable_");
+}
+
+async function analyticsPost(table, rows, keepalive = false) {
+  if (!analyticsReady() || !rows.length) return false;
+
+  const base = ANALYTICS_CONFIG.supabaseUrl.replace(/\/$/, "");
+
+  try {
+    const response = await fetch(`${base}/rest/v1/${table}`, {
+      method: "POST",
+      headers: {
+        "apikey": ANALYTICS_CONFIG.publishableKey,
+        "Authorization": `Bearer ${ANALYTICS_CONFIG.publishableKey}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify(rows),
+      keepalive
+    });
+
+    if (!response.ok) {
+      console.warn("VENTURE INFO analytics insert failed:", response.status, await response.text());
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.warn("VENTURE INFO analytics network error:", error);
+    return false;
+  }
+}
+
+function analyticsTrack(eventType, payload = {}) {
+  analyticsQueue.push({
+    session_id: analyticsSessionId,
+    event_type: eventType,
+    industry: payload.industry || null,
+    company: payload.company || null,
+    x_position: Number.isFinite(payload.x_position)
+      ? Number(payload.x_position.toFixed(4))
+      : null,
+    depth_m: Number.isFinite(payload.depth_m)
+      ? Math.round(payload.depth_m)
+      : null,
+    metadata: payload.metadata || {}
+  });
+
+  if (analyticsQueue.length >= 8) {
+    analyticsFlush();
+  } else if (!analyticsFlushTimer) {
+    analyticsFlushTimer = setTimeout(() => analyticsFlush(), 5000);
+  }
+}
+
+async function analyticsFlush(keepalive = false) {
+  clearTimeout(analyticsFlushTimer);
+  analyticsFlushTimer = null;
+
+  if (!analyticsQueue.length || !analyticsReady()) return;
+
+  const batch = analyticsQueue.splice(0, analyticsQueue.length);
+  const ok = await analyticsPost("events", batch, keepalive);
+
+  if (!ok && !keepalive) {
+    analyticsQueue.unshift(...batch.slice(-40));
+  }
+}
+
+async function analyticsSubmitSurvey(interestedIndustries, noPreference) {
+  localStorage.setItem(SURVEY_LOCAL_KEY, JSON.stringify({
+    interested_industries: interestedIndustries,
+    no_preference: noPreference,
+    answered_at: new Date().toISOString()
+  }));
+
+  await analyticsPost("survey_responses", [{
+    session_id: analyticsSessionId,
+    interested_industries: interestedIndustries,
+    no_preference: noPreference
+  }]);
+
+  analyticsTrack("survey_submitted", {
+    metadata: {
+      interested_industries: interestedIndustries,
+      no_preference: noPreference
+    }
+  });
+}
+
+function setupOnboardingSurvey() {
+  const dialog = document.getElementById("onboardingDialog");
+  const form = document.getElementById("onboardingForm");
+  const options = document.getElementById("surveyIndustryOptions");
+  const noPreference = document.getElementById("surveyNoPreference");
+  const error = document.getElementById("surveyError");
+
+  if (!dialog || !form || !options || !noPreference || !error) return;
+
+  options.innerHTML = industries.map(industry => `
+    <label class="survey-option">
+      <input type="checkbox" name="survey-industry" value="${industry}">
+      <span>${industry}</span>
+    </label>
+  `).join("");
+
+  const industryChecks =
+    [...options.querySelectorAll('input[name="survey-industry"]')];
+
+  noPreference.addEventListener("change", () => {
+    if (noPreference.checked) {
+      industryChecks.forEach(input => input.checked = false);
+    }
+    error.textContent = "";
+  });
+
+  industryChecks.forEach(input => {
+    input.addEventListener("change", () => {
+      if (input.checked) noPreference.checked = false;
+      error.textContent = "";
+    });
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const selected = industryChecks
+      .filter(input => input.checked)
+      .map(input => input.value);
+
+    if (!selected.length && !noPreference.checked) {
+      error.textContent =
+        "1つ以上選ぶか、「まだ特に決まっていない」を選んでください。";
+      return;
+    }
+
+    localStorage.setItem(ONBOARDING_KEY, "1");
+    dialog.close();
+
+    analyticsSubmitSurvey(selected, noPreference.checked);
+    showToast("回答ありがとう。採掘をはじめよう");
+  });
+
+  if (!localStorage.getItem(ONBOARDING_KEY)) {
+    requestAnimationFrame(() => dialog.showModal());
+  }
+}
+
+function updateAnalyticsBadge() {
+  const badge = document.getElementById("analyticsBadge");
+  if (!badge) return;
+  badge.style.display = analyticsReady() ? "none" : "block";
+}
+
 const industries = [
   "テック・メディア",
   "総合商社",
@@ -2834,6 +3144,17 @@ function carveWithShovel(localX, downwardSpeed) {
 
   drawCover();
   persist();
+
+  const excavationPx = surfaceDepthAtX(localX);
+  analyticsTrack("dig", {
+    industry: getIndustryFromX(localX),
+    x_position: localX / Math.max(1, w),
+    depth_m: getDepthFromY(excavationPx),
+    metadata: {
+      dig_power_level: state.level,
+      downward_speed: Number(Math.max(0, downwardSpeed).toFixed(2))
+    }
+  });
 }
 
 function revealCompaniesNear(localX) {
@@ -2856,6 +3177,11 @@ function revealCompaniesNear(localX) {
   });
 
   if (found) {
+    analyticsTrack("company_discovered", {
+      industry: found.industry,
+      company: found.displayName,
+      depth_m: found.depth
+    });
     showToast(`発見：${found.displayName}`);
     setTimeout(() => openCompany(found), 220);
   }
@@ -3195,6 +3521,11 @@ function renderDetail(company, tab) {
 }
 
 function openCompany(company) {
+  analyticsTrack("company_opened", {
+    industry: company.industry,
+    company: company.displayName,
+    depth_m: company.depth
+  });
   state.selectedCompany = company;
   state.detailTab = "compensation";
 
@@ -3228,7 +3559,15 @@ function openCompany(company) {
 
 function saveCurrentCompany() {
   if (!state.selectedCompany) return;
+  const wasSaved = state.saved.has(state.selectedCompany.name);
   state.saved.add(state.selectedCompany.name);
+  if (!wasSaved) {
+    analyticsTrack("company_saved", {
+      industry: state.selectedCompany.industry,
+      company: state.selectedCompany.displayName,
+      depth_m: state.selectedCompany.depth
+    });
+  }
   persist();
   renderCollection();
   document.getElementById("saveCompanyBtn").textContent = "保存済み";
@@ -3395,6 +3734,10 @@ document.getElementById("resetBtn").addEventListener("click", resetDemo);
 
   document.getElementById("applyFilterBtn")?.addEventListener("click", () => {
     state.activeIndustryFilter = document.getElementById("industryFilter").value;
+    analyticsTrack("filter_applied", {
+      industry: state.activeIndustryFilter === "ALL" ? null : state.activeIndustryFilter,
+      metadata: { filter: state.activeIndustryFilter }
+    });
     renderOres();
     els.filterDialog.close();
     showToast(state.activeIndustryFilter === "ALL"
@@ -3437,8 +3780,18 @@ document.getElementById("resetBtn").addEventListener("click", resetDemo);
     );
     if (found) {
       e.preventDefault();
+      analyticsTrack("search_selected", {
+        industry: found.industry,
+        company: found.displayName,
+        metadata: { query: q.slice(0, 80) }
+      });
       openCompany(found);
     }
+  });
+
+  window.addEventListener("pagehide", () => analyticsFlush(true));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") analyticsFlush(true);
   });
 
   window.addEventListener("resize", () => {
@@ -3468,6 +3821,15 @@ function init() {
   renderCollection();
   updateStatus();
   bindEvents();
+  setupOnboardingSurvey();
+  updateAnalyticsBadge();
+  analyticsTrack("session_started", {
+    metadata: {
+      referrer: document.referrer ? "external_or_internal" : "direct",
+      viewport_width: window.innerWidth,
+      viewport_height: window.innerHeight
+    }
+  });
   setShovelDockInstant();
   requestAnimationFrame(physicsFrame);
 }
