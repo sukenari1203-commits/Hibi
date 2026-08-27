@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VENTURE INFO — Admin AI Analyst</title>
+  <style>
+    :root {
+      --bg:#0d0f10; --panel:#151819; --panel2:#1b1f20; --line:#2c3234;
+      --text:#f5f0e6; --muted:#9ca5a8; --gold:#ddb94f; --bad:#ff7a69;
+      --good:#8fdaa0; --cream:#f3ead8; --ink:#1d1b18;
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0; background:linear-gradient(180deg,#0a0c0d,#111416 55%,#0c0e0f);
+      color:var(--text); font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+      min-height:100vh;
+    }
+    header {
+      height:68px; display:flex; align-items:center; justify-content:space-between;
+      padding:0 28px; border-bottom:1px solid var(--line); background:rgba(9,11,12,.92);
+      position:sticky; top:0; z-index:10; backdrop-filter:blur(14px);
+    }
+    .brand { display:flex; gap:12px; align-items:center; }
+    .mark { width:36px; height:36px; display:grid; place-items:center; background:var(--gold); color:#111; border-radius:8px; font-weight:900; }
+    .brand strong { color:var(--gold); letter-spacing:.08em; font-family:Georgia,serif; }
+    .brand small { display:block; color:#778084; font-size:9px; letter-spacing:.16em; margin-top:2px; }
+    .status { font-size:11px; color:var(--muted); display:flex; gap:8px; align-items:center; }
+    .dot { width:8px; height:8px; border-radius:50%; background:#777; }
+    .dot.ok { background:var(--good); box-shadow:0 0 14px rgba(143,218,160,.6); }
+    main { width:min(1180px,calc(100% - 32px)); margin:34px auto 80px; display:grid; gap:18px; }
+    .hero {
+      padding:28px; border:1px solid var(--line); border-radius:16px;
+      background:linear-gradient(135deg,rgba(221,185,79,.08),rgba(255,255,255,.018));
+    }
+    .eyebrow { color:var(--gold); font-size:10px; font-weight:900; letter-spacing:.18em; }
+    h1 { margin:8px 0 10px; font:500 34px/1.12 Georgia,serif; }
+    .lead { margin:0; color:var(--muted); font-size:13px; line-height:1.75; max-width:900px; }
+    .grid { display:grid; grid-template-columns:1.25fr .75fr; gap:18px; }
+    .panel { border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:22px; }
+    .panel h2 { margin:0 0 6px; font:500 22px/1.2 Georgia,serif; }
+    .sub { color:var(--muted); font-size:11px; line-height:1.65; margin-bottom:18px; }
+    label { display:block; color:#bac1c3; font-size:10px; font-weight:800; letter-spacing:.08em; margin-bottom:7px; }
+    input, textarea, select {
+      width:100%; border:1px solid #343b3d; border-radius:9px; background:#0e1112;
+      color:#f4efe6; padding:12px 13px; outline:none; font:inherit;
+    }
+    textarea { min-height:116px; resize:vertical; line-height:1.6; }
+    input:focus, textarea:focus, select:focus { border-color:#9f8432; box-shadow:0 0 0 3px rgba(221,185,79,.08); }
+    .row { display:grid; grid-template-columns:1fr 180px; gap:10px; }
+    button {
+      border:0; border-radius:9px; min-height:44px; padding:0 16px; cursor:pointer; font-weight:850;
+    }
+    .primary { width:100%; margin-top:12px; background:var(--gold); color:#14120d; }
+    .secondary { background:#24292b; color:#e8e2d6; border:1px solid #343a3c; }
+    button:disabled { opacity:.5; cursor:wait; }
+    .security {
+      margin-top:12px; padding:10px 12px; border-radius:9px; background:#101314; color:#8f999c;
+      font-size:9px; line-height:1.6; border:1px solid #252a2c;
+    }
+    .answer {
+      min-height:220px; padding:18px; border-radius:12px; background:var(--cream); color:var(--ink);
+      border:1px solid #e1d3bb; white-space:pre-wrap; line-height:1.75; font-size:13px;
+    }
+    .answer.empty { color:#897e6d; }
+    .evidence { display:grid; gap:8px; margin-top:14px; }
+    .fact {
+      padding:11px 12px; border:1px solid #303638; border-radius:9px; background:#111415;
+      color:#c9d0d2; font-size:10px; line-height:1.55;
+    }
+    .fact strong { color:var(--gold); }
+    .metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:9px; }
+    .metric { padding:14px; border:1px solid #2d3335; border-radius:10px; background:#101314; }
+    .metric small { display:block; color:#7f898c; font-size:8px; letter-spacing:.1em; font-weight:900; }
+    .metric strong { display:block; margin-top:5px; color:#f1eadf; font:500 20px/1 Georgia,serif; }
+    .session-result { margin-top:12px; max-height:360px; overflow:auto; }
+    .event { padding:9px 0; border-bottom:1px solid #282e30; font-size:10px; color:#b8c0c2; }
+    .event b { color:#f2eadc; }
+    .error { color:var(--bad); margin-top:10px; font-size:10px; min-height:16px; }
+    .loading { color:var(--gold); }
+
+    .admin-lock {
+      position:fixed; inset:0; z-index:9999; display:grid; place-items:center;
+      padding:20px; background:
+        radial-gradient(circle at 50% 25%, rgba(221,185,79,.08), transparent 34%),
+        rgba(7,9,10,.985);
+      backdrop-filter:blur(18px);
+    }
+    .admin-lock.hidden { display:none; }
+    .lock-card {
+      width:min(440px,100%); padding:30px; border:1px solid #303638; border-radius:16px;
+      background:#121516; box-shadow:0 34px 100px rgba(0,0,0,.5);
+    }
+    .lock-mark {
+      width:44px; height:44px; display:grid; place-items:center; margin-bottom:18px;
+      border-radius:10px; background:var(--gold); color:#111; font-weight:950; font-size:20px;
+    }
+    .lock-card h1 { margin:0 0 8px; font-size:28px; }
+    .lock-card p { margin:0 0 20px; color:var(--muted); font-size:11px; line-height:1.7; }
+    .lock-error { min-height:18px; margin-top:10px; color:var(--bad); font-size:10px; }
+    .lock-meta { margin-top:14px; color:#6f797c; font-size:9px; line-height:1.6; }
+
+    @media (max-width:850px) {
+      .grid { grid-template-columns:1fr; }
+      .row { grid-template-columns:1fr; }
+      header { padding:0 16px; }
+      main { width:min(100% - 20px,1180px); margin-top:20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="admin-lock" id="adminLock">
+  <div class="lock-card">
+    <div class="lock-mark">◇</div>
+    <div class="eyebrow">ADMIN ACCESS</div>
+    <h1>管理者認証</h1>
+    <p>4桁の管理者PINを入力してください。認証はSupabase Edge Function側で行われ、PIN自体はGitHubのHTMLには保存されません。</p>
+    <label for="lockToken">ADMIN PIN</label>
+    <input id="lockToken" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="4桁のPIN" />
+    <button class="primary" id="unlockBtn">ロックを解除</button>
+    <div class="lock-error" id="lockError"></div>
+    <div class="lock-meta">ブラウザを閉じると認証状態は解除されます。</div>
+  </div>
+</div>
+<header>
+  <div class="brand">
+    <div class="mark">◇</div>
+    <div><strong>VENTURE INFO</strong><small>ADMIN · AI DISCOVERY ANALYST</small></div>
+  </div>
+  <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Not connected</span></div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="eyebrow">FACT-GROUNDED DISCOVERY INTELLIGENCE</div>
+    <h1>志望と実際の探索行動を、AIで読む。</h1>
+    <p class="lead">同一 session_id を内部で結合し、割合・人数・掘削回数はコード側で確定計算します。OpenAIには匿名の集計値だけを渡し、AIはその事実を解釈・文章化します。</p>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>AI Analyst</h2>
+      <div class="sub">例：「総合商社志望の人の何％がIT・SIも掘った？」「金融志望者の探索先を事実ベースで比較して」</div>
+
+      <div id="tokenMaintenance" style="display:none">
+        <label for="adminToken">ADMIN PIN</label>
+        <input id="adminToken" type="password" autocomplete="current-password" placeholder="Supabase Secrets に設定した ADMIN_DASHBOARD_TOKEN" />
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <div>
+          <label for="question">QUESTION</label>
+          <textarea id="question">総合商社志望の人は、実際にはどの業界を掘っている？ 人数ベースの割合と掘削回数を分けて説明して。</textarea>
+        </div>
+        <div>
+          <label for="days">PERIOD</label>
+          <select id="days">
+            <option value="0">全期間</option>
+            <option value="7">直近7日</option>
+            <option value="30">直近30日</option>
+            <option value="90">直近90日</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="primary" id="analyzeBtn">AIで分析</button>
+      <div class="security">OpenAI API key / Supabase service-role key はこのページに置きません。管理トークンは sessionStorage のみに保存され、ブラウザを閉じると消えます。</div>
+      <div class="error" id="error"></div>
+    </section>
+
+    <aside class="panel">
+      <h2>Snapshot</h2>
+      <div class="sub">AIの文章とは別に、バックエンドが算出した母数を表示。</div>
+      <div class="metrics">
+        <div class="metric"><small>SURVEYED</small><strong id="mSurveyed">—</strong></div>
+        <div class="metric"><small>ACTIVE</small><strong id="mActive">—</strong></div>
+        <div class="metric"><small>DIG EVENTS</small><strong id="mDigs">—</strong></div>
+        <div class="metric"><small>SAVED SESSIONS</small><strong id="mSaved">—</strong></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="panel">
+    <h2>Analysis</h2>
+    <div class="sub">人数の割合は distinct session_id を母数に算出。AIに計算させません。</div>
+    <div class="answer empty" id="answer">ここに分析結果が表示されます。</div>
+    <div class="evidence" id="evidence"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Session Drill-down</h2>
+    <div class="sub">特定の匿名 session_id のアンケートと行動時系列を確認。AI要約も可能です。</div>
+    <div class="row">
+      <input id="sessionId" placeholder="例: 78f53633-09d4-4c67-..." />
+      <button class="secondary" id="sessionBtn">このIDを確認</button>
+    </div>
+    <div class="error" id="sessionError"></div>
+    <div class="session-result" id="sessionResult"></div>
+  </section>
+</main>
+
+<script>
+const FUNCTION_URL = "https://ioznepuggdzagmckljbp.supabase.co/functions/v1/smart-endpoint";
+
+const $ = (id) => document.getElementById(id);
+const tokenInput = $("adminToken");
+tokenInput.value = sessionStorage.getItem("vi-admin-token") || "";
+
+const adminLock = $("adminLock");
+const lockToken = $("lockToken");
+const unlockBtn = $("unlockBtn");
+const lockError = $("lockError");
+
+async function verifyAdminToken(token) {
+  const res = await fetch(FUNCTION_URL, {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "x-admin-token":token
+    },
+    body:JSON.stringify({ mode:"auth_check" })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) throw new Error(data.error || "認証に失敗しました。");
+  return true;
+}
+
+async function unlockAdmin() {
+  const token = lockToken.value.trim();
+  if (!/^[0-9]{4}$/.test(token)) {
+    lockError.textContent = "4桁の半角数字で入力してください。";
+    return;
+  }
+
+  unlockBtn.disabled = true;
+  unlockBtn.textContent = "認証中…";
+  lockError.textContent = "";
+
+  try {
+    await verifyAdminToken(token);
+    sessionStorage.setItem("vi-admin-token", token);
+    tokenInput.value = token;
+    adminLock.classList.add("hidden");
+    setStatus(true, "Admin authenticated");
+  } catch (e) {
+    sessionStorage.removeItem("vi-admin-token");
+    tokenInput.value = "";
+    lockError.textContent = e.message || "認証に失敗しました。";
+    setStatus(false, "Locked");
+  } finally {
+    unlockBtn.disabled = false;
+    unlockBtn.textContent = "ロックを解除";
+  }
+}
+
+lockToken.addEventListener("input", () => {
+  lockToken.value = lockToken.value.replace(/\D/g, "").slice(0, 4);
+});
+unlockBtn.addEventListener("click", unlockAdmin);
+lockToken.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") unlockAdmin();
+});
+
+(async () => {
+  const saved = sessionStorage.getItem("vi-admin-token");
+  if (!saved) {
+    setStatus(false, "Locked");
+    return;
+  }
+  lockToken.value = saved;
+  try {
+    await verifyAdminToken(saved);
+    tokenInput.value = saved;
+    adminLock.classList.add("hidden");
+    setStatus(true, "Admin authenticated");
+  } catch {
+    sessionStorage.removeItem("vi-admin-token");
+    setStatus(false, "Locked");
+  }
+})();
+
+
+function setStatus(ok, text) {
+  $("statusDot").classList.toggle("ok", !!ok);
+  $("statusText").textContent = text;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
+
+async function callAnalyst(payload) {
+  const token = tokenInput.value.trim();
+  if (!token) throw new Error("ADMIN PIN を入力してください。");
+  sessionStorage.setItem("vi-admin-token", token);
+
+  const res = await fetch(FUNCTION_URL, {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "x-admin-token":token
+    },
+    body:JSON.stringify(payload)
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  setStatus(true, "Connected");
+  return data;
+}
+
+$("analyzeBtn").addEventListener("click", async () => {
+  const btn = $("analyzeBtn");
+  $("error").textContent = "";
+  btn.disabled = true;
+  btn.textContent = "分析中…";
+  $("answer").classList.add("empty");
+  $("answer").textContent = "Supabase集計 → OpenAI分析を実行中…";
+  $("evidence").innerHTML = "";
+
+  try {
+    const data = await callAnalyst({
+      mode:"aggregate",
+      question:$("question").value.trim(),
+      days:Number($("days").value || 0)
+    });
+
+    $("answer").classList.remove("empty");
+    $("answer").textContent = data.analysis?.answer || "回答なし";
+
+    const s = data.snapshot || {};
+    $("mSurveyed").textContent = s.surveyed_sessions ?? "—";
+    $("mActive").textContent = s.active_sessions ?? "—";
+    $("mDigs").textContent = s.total_dig_events ?? "—";
+    $("mSaved").textContent = s.saved_sessions ?? "—";
+
+    const facts = data.evidence || [];
+    $("evidence").innerHTML = facts.map(f => `
+      <div class="fact">
+        <strong>${escapeHtml(f.id)}</strong> ·
+        志望=${escapeHtml(f.aspiration)} → 掘削=${escapeHtml(f.target_industry)} /
+        母数 ${escapeHtml(f.cohort_sessions)}人 /
+        掘った人 ${escapeHtml(f.dug_sessions)}人 /
+        <b>${escapeHtml(f.person_rate_pct)}%</b> /
+        掘削 ${escapeHtml(f.dig_events)}回 /
+        保存 ${escapeHtml(f.saved_sessions)}人
+      </div>
+    `).join("");
+
+  } catch (e) {
+    setStatus(false, "Error");
+    $("error").textContent = e.message;
+    $("answer").textContent = "分析に失敗しました。";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "AIで分析";
+  }
+});
+
+$("sessionBtn").addEventListener("click", async () => {
+  $("sessionError").textContent = "";
+  $("sessionResult").innerHTML = `<div class="loading">読み込み中…</div>`;
+  try {
+    const data = await callAnalyst({
+      mode:"session",
+      session_id:$("sessionId").value.trim()
+    });
+
+    const survey = data.session?.survey;
+    const events = data.session?.events || [];
+    const ai = data.analysis?.answer || "";
+
+    $("sessionResult").innerHTML = `
+      <div class="fact" style="margin-bottom:10px">
+        <strong>志望</strong>:
+        ${escapeHtml(survey?.no_preference ? "未定" : (survey?.interested_industries || []).join(" / ") || "回答なし")}
+        <br><strong>AI要約</strong>: ${escapeHtml(ai)}
+      </div>
+      ${events.map(e => `
+        <div class="event">
+          <b>${escapeHtml(e.event_type)}</b>
+          ${e.industry ? ` · ${escapeHtml(e.industry)}` : ""}
+          ${e.company ? ` · ${escapeHtml(e.company)}` : ""}
+          ${Number.isFinite(e.depth_m) ? ` · ${escapeHtml(e.depth_m)}m` : ""}
+          <br>${escapeHtml(e.created_at)}
+        </div>
+      `).join("") || `<div class="event">イベントなし</div>`}
+    `;
+  } catch (e) {
+    $("sessionError").textContent = e.message;
+    $("sessionResult").innerHTML = "";
+  }
+});
+</script>
+</body>
+</html>
