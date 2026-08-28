@@ -2032,7 +2032,7 @@ body.mobile-experience .mobile-bottom-nav {
   bottom: 0;
   height: 66px;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   border-top: 1px solid rgba(226,183,70,.24);
   background: rgba(13,14,13,.97);
   backdrop-filter: blur(16px);
@@ -2408,6 +2408,7 @@ body.mobile-experience .quarry-scroll-cue {
 
     <nav class="nav" aria-label="Primary">
       <button class="nav-item active" data-nav="quarry">採掘場</button>
+      <button class="nav-item" data-nav="conveyor">ベルトコンベアー</button>
       <button class="nav-item" data-nav="collection">コレクション</button>
       <button class="nav-item" data-nav="report">レポート</button>
     </nav>
@@ -2655,6 +2656,7 @@ body.mobile-experience .quarry-scroll-cue {
 
   <nav class="mobile-bottom-nav" aria-label="スマホ用ナビゲーション">
     <button type="button" id="mobileMineBtn"><b>⛏</b><span>採掘</span></button>
+    <a href="conveyor.html"><b>▰</b><span>ベルト</span></a>
     <a href="collection.html"><b>◇</b><span>図鑑</span></a>
     <button type="button" id="mobileBrowserBtn"><b>▰</b><span>ブラウザ版</span></button>
   </nav>
@@ -4199,6 +4201,8 @@ function bindEvents() {
       const nav = btn.dataset.nav;
       if (nav === "quarry") {
         window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (nav === "conveyor") {
+        location.href = "conveyor.html";
       } else if (nav === "collection") {
         location.href = "collection.html";
       } else if (nav === "report") {
