@@ -73,7 +73,6 @@
       method: "POST",
       headers: {
         apikey: PUBLISHABLE_KEY,
-        Authorization: `Bearer ${PUBLISHABLE_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ p_lookup: String(lookup) })
