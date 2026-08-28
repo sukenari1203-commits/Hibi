@@ -872,7 +872,7 @@ button {
 
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
   margin: 22px 0;
 }
@@ -2394,6 +2394,26 @@ body.mobile-experience .quarry-scroll-cue {
   100%{opacity:.45; transform:scale(.78) rotate(45deg);}
 }
 
+
+/* GAFA treasure hint balloon */
+.gafa-balloon{position:absolute;z-index:6;right:8.5%;top:20px;width:310px;height:220px;pointer-events:none;animation:gafaFloat 5.5s ease-in-out infinite;filter:drop-shadow(0 12px 12px rgba(54,40,20,.14))}
+.gafa-envelope{position:absolute;right:84px;top:0;width:92px;height:112px;border-radius:50% 50% 46% 46%/58% 58% 42% 42%;background:radial-gradient(circle at 35% 25%,#fff2b9 0 9%,transparent 10%),linear-gradient(90deg,#bc3a31 0 21%,#e4b348 21% 41%,#f4e5b8 41% 59%,#4b8e96 59% 79%,#a13c44 79%);border:3px solid rgba(83,57,27,.65)}
+.gafa-envelope:after{content:"";position:absolute;left:31px;bottom:-14px;width:30px;height:18px;background:#7c4e24;clip-path:polygon(20% 0,80% 0,100% 100%,0 100%)}
+.gafa-basket{position:absolute;right:109px;top:125px;width:42px;height:27px;background:linear-gradient(#9a672f,#69431f);border:2px solid #4c3017;border-radius:3px 3px 7px 7px}
+.gafa-rider{position:absolute;left:12px;top:-20px;width:16px;height:22px;background:#29241e;border-radius:8px 8px 4px 4px}.gafa-rider:before{content:"";position:absolute;left:3px;top:-9px;width:10px;height:10px;border-radius:50%;background:#d8b083}
+.gafa-banner{position:absolute;left:0;bottom:0;width:305px;min-height:66px;display:flex;align-items:center;gap:11px;padding:9px 13px;background:#fffdf6;border:2px solid #5f503c;box-shadow:0 7px 12px rgba(0,0,0,.13);transform:rotate(-1.5deg)}
+.gafa-banner:before,.gafa-banner:after{content:"";position:absolute;top:-47px;width:1.5px;height:48px;background:#554833}.gafa-banner:before{left:102px;transform:rotate(10deg)}.gafa-banner:after{right:102px;transform:rotate(-10deg)}
+.gafa-ore-silhouette{flex:0 0 42px;height:42px;background:#24201b;clip-path:polygon(45% 0,85% 12%,100% 48%,76% 92%,34% 100%,0 70%,8% 24%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.2)}
+.gafa-banner b{font-size:10px;line-height:1.5;letter-spacing:.03em;color:#30281f}
+@keyframes gafaFloat{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(8px) rotate(1deg)}}
+@media(max-width:720px){.gafa-balloon{right:5px;top:60px;transform-origin:top right;scale:.68}.gafa-banner{width:285px}.gafa-banner b{font-size:9px}}
+
+/* Level-unlocked digging tools */
+.mine-stage.soil-hover.tool-hand,.mine-stage.soil-hover.tool-hand #digCanvas{cursor:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%220%200%2040%2040%22%3E%3Cpath%20d%3D%22M15%2031c-4-5-6-9-5-12%201-2%203-1%205%201V9c0-2%203-2%203%200v8-10c0-2%203-2%203%200v10V8c0-2%203-2%203%200v10-7c0-2%203-2%203%200v11c3-2%205-1%204%202l-3%208c-1%203-4%205-7%205h-1c-2%200-4-2-5-6z%22%20fill%3D%22%23d9b38c%22%20stroke%3D%22%235e3b20%22%20stroke-width%3D%221.5%22%2F%3E%3Cpath%20d%3D%22M14%2028h14%22%20stroke%3D%22%23b77a45%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E") 18 32,pointer !important}
+.mine-stage.soil-hover.tool-shovel,.mine-stage.soil-hover.tool-shovel #digCanvas{cursor:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2244%22%20height%3D%2244%22%20viewBox%3D%220%200%2044%2044%22%3E%3Cg%20transform%3D%22rotate%28-32%2022%2022%29%22%3E%3Cpath%20d%3D%22M18%204%20Q22%200%2026%204%20L25%209%20H19%20Z%22%20fill%3D%22%23e53935%22%20stroke%3D%22%23781915%22%20stroke-width%3D%221.6%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%227%22%20width%3D%224%22%20height%3D%2223%22%20rx%3D%222%22%20fill%3D%22%23e53935%22%20stroke%3D%22%23781915%22%20stroke-width%3D%221.4%22%2F%3E%3Cpath%20d%3D%22M14%2028%20Q22%2023%2030%2028%20L28%2037%20Q22%2042%2016%2037%20Z%22%20fill%3D%22%23d9dde1%22%20stroke%3D%22%23555b61%22%20stroke-width%3D%221.7%22%2F%3E%3Cpath%20d%3D%22M17%2030%20Q22%2027%2027%2030%22%20fill%3D%22none%22%20stroke%3D%22%23f8f9fa%22%20stroke-width%3D%221.2%22%20opacity%3D%22.85%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 26 38,pointer !important}
+.mine-stage.soil-hover.tool-drill,.mine-stage.soil-hover.tool-drill #digCanvas{cursor:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2244%22%20height%3D%2244%22%20viewBox%3D%220%200%2044%2044%22%3E%3Cg%20transform%3D%22rotate%28-28%2022%2022%29%22%3E%3Cpath%20d%3D%22M7%2012h23c3%200%205%202%205%205v7H14c-4%200-7-3-7-7z%22%20fill%3D%22%23e0aa2f%22%20stroke%3D%22%2351431d%22%20stroke-width%3D%221.6%22%2F%3E%3Cpath%20d%3D%22M17%2024h10l-2%2013h-8z%22%20fill%3D%22%23222%22%20stroke%3D%22%230e0e0e%22%20stroke-width%3D%221.4%22%2F%3E%3Cpath%20d%3D%22M35%2017h5l3%203-3%203h-5z%22%20fill%3D%22%23c9d0d5%22%20stroke%3D%22%23555%22%20stroke-width%3D%221.4%22%2F%3E%3Ccircle%20cx%3D%2214%22%20cy%3D%2218%22%20r%3D%223%22%20fill%3D%22%23f4d36a%22%2F%3E%3Cpath%20d%3D%22M19%2028h5%22%20stroke%3D%22%23d8d8d8%22%20stroke-width%3D%222%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 35 24,pointer !important}
+.tool-now{display:block;margin-top:4px;color:#a97717;font-size:9px;font-weight:900;letter-spacing:.06em}
+
 </style>
 </head>
 <body class="mobile-experience">
@@ -2433,6 +2453,7 @@ body.mobile-experience .quarry-scroll-cue {
         <div class="cloud c1"></div>
         <div class="cloud c2"></div>
         <div class="cloud c3"></div>
+        <div class="gafa-balloon" aria-hidden="true"><div class="gafa-envelope"></div><div class="gafa-basket"><span class="gafa-rider"></span></div><div class="gafa-banner"><span class="gafa-ore-silhouette"></span><b>アメリカの有名大企業鉱石が<br>埋められているぞ！</b></div></div>
 
         <div class="hero-copy">
           <div>
@@ -2493,7 +2514,7 @@ body.mobile-experience .quarry-scroll-cue {
           <div>
             <small>DIG POWER</small>
             <strong>Lv. <span id="levelValue">1</span></strong>
-            <div class="meter"><i id="xpMeter"></i></div>
+            <div class="meter"><i id="xpMeter"></i></div><span class="tool-now" id="toolNow">手掘り</span>
           </div>
         </div>
         <div class="status-card compact">
@@ -2658,6 +2679,7 @@ body.mobile-experience .quarry-scroll-cue {
     <button type="button" id="mobileMineBtn"><b>⛏</b><span>採掘</span></button>
     <a href="conveyor.html"><b>▰</b><span>ベルト</span></a>
     <a href="collection.html"><b>◇</b><span>図鑑</span></a>
+    <a href="report.html"><b>▥</b><span>レポート</span></a>
     <button type="button" id="mobileBrowserBtn"><b>▰</b><span>ブラウザ版</span></button>
   </nav>
 
@@ -3219,9 +3241,36 @@ function persistCompanyCatalog() {
   }
 }
 
+
+const INTEREST_KEY = "vi-interest-signals-v1";
+function recordInterest(industry,type,amount=1){
+  if(!industry) return;
+  try{
+    const all=JSON.parse(localStorage.getItem(INTEREST_KEY)||"{}");
+    const row=all[industry]||{dig:0,discover:0,open:0,save:0};
+    row[type]=(Number(row[type])||0)+amount;
+    all[industry]=row;
+    localStorage.setItem(INTEREST_KEY,JSON.stringify(all));
+  }catch(_){}
+}
+function currentTool(){
+  if(state.level>=100) return {id:"drill",name:"ドリル",impact:30};
+  if(state.level>=50) return {id:"shovel",name:"赤柄シャベル",impact:21};
+  return {id:"hand",name:"手掘り",impact:14};
+}
+function gainDigXp(){
+  if(state.level>=100){state.level=100;state.xp=0;return;}
+  state.xp+=10;
+  while(state.xp>=30 && state.level<100){
+    state.xp-=30; state.level+=1;
+    if(state.level===50) showToast("赤柄シャベルをアンロック！ Lv.50");
+    else if(state.level===100){state.xp=0;showToast("ドリルをアンロック！ Lv.100");}
+  }
+}
+
 const state = {
-level: 1,
-  xp: 0,
+  level: Math.max(1, Math.min(100, Number(localStorage.getItem("vi-dig-level-v2") || 1))),
+  xp: Math.max(0, Number(localStorage.getItem("vi-dig-xp-v2") || 0)),
   discovered: new Set(JSON.parse(localStorage.getItem("vi-major-discovered-v2") || "[]")),
   saved: new Set(JSON.parse(localStorage.getItem("vi-major-saved-v2") || "[]")),
   deepest: Number(localStorage.getItem("vi-major-deepest-v2") || 0),
@@ -3245,6 +3294,7 @@ const els = {
   depthFloat: document.getElementById("depthFloat"),
   industryFloat: document.getElementById("industryFloat"),
 levelValue: document.getElementById("levelValue"),
+  toolNow: document.getElementById("toolNow"),
   xpMeter: document.getElementById("xpMeter"),
   discoveredValue: document.getElementById("discoveredValue"),
   deepestValue: document.getElementById("deepestValue"),
@@ -3292,6 +3342,8 @@ function persist() {
   localStorage.setItem("vi-major-discovered-v2", JSON.stringify([...state.discovered]));
   localStorage.setItem("vi-major-saved-v2", JSON.stringify([...state.saved]));
   localStorage.setItem("vi-major-deepest-v2", String(state.deepest));
+  localStorage.setItem("vi-dig-level-v2", String(state.level));
+  localStorage.setItem("vi-dig-xp-v2", String(state.xp));
 
   const h = Math.max(1, els.mineStage.clientHeight);
   const normalized = surfaceProfile.map(v => Math.max(0, Math.min(1, v / h)));
@@ -3609,6 +3661,7 @@ function revealCompaniesNear(localX) {
     const excavation = surfaceDepthAtX(p.x);
     if (Math.abs(p.x - localX) <= 34 && excavation >= p.y - 22) {
       state.discovered.add(company.name);
+      recordInterest(company.industry,"discover");
       const ore = [...document.querySelectorAll(".ore")].find(el => el.dataset.name === company.name);
       if (ore) ore.classList.add("revealed");
       found = company;
@@ -3720,15 +3773,11 @@ function digAtLocalPoint(localX, localY = 0) {
   localX = Math.max(0, Math.min(rect.width, localX));
   localY = Math.max(0, Math.min(rect.height, localY));
 
-  // Same excavation footprint as the former shovel blade.
-  const clickImpact = 18;
-
-  state.xp += 4;
-  if (state.xp >= 20) {
-    state.level += 1;
-    state.xp = 0;
-    showToast(`DIG POWER が Lv.${state.level} に上がりました`);
-  }
+  // Tool power grows at Lv.50 / Lv.100.
+  const tool = currentTool();
+  const clickImpact = tool.impact;
+  gainDigXp();
+  recordInterest(getIndustryFromX(localX), "dig");
 
   carveWithShovel(localX, clickImpact);
   const newSurface = surfaceDepthAtX(localX);
@@ -4059,6 +4108,7 @@ function renderDetail(company, tab) {
 }
 
 function openCompany(company) {
+  recordInterest(company.industry,"open");
   analyticsTrack("company_opened", {
     industry: company.industry,
     company: company.displayName,
@@ -4100,6 +4150,7 @@ function saveCurrentCompany() {
   const wasSaved = state.saved.has(state.selectedCompany.name);
   state.saved.add(state.selectedCompany.name);
   if (!wasSaved) {
+    recordInterest(state.selectedCompany.industry,"save");
     analyticsTrack("company_saved", {
       industry: state.selectedCompany.industry,
       company: state.selectedCompany.displayName,
@@ -4164,8 +4215,12 @@ function renderCollection() {
 }
 
 function updateStatus() {
-els.levelValue.textContent = state.level;
-  els.xpMeter.style.width = `${(state.xp / 20) * 100}%`;
+  els.levelValue.textContent = state.level;
+  els.xpMeter.style.width = `${state.level>=100?100:(state.xp / 30) * 100}%`;
+  const tool=currentTool();
+  if(els.toolNow) els.toolNow.textContent = tool.name + (state.level<50?" · Lv.50でシャベル":state.level<100?" · Lv.100でドリル":" · MAX");
+  els.mineStage.classList.remove("tool-hand","tool-shovel","tool-drill");
+  els.mineStage.classList.add(`tool-${tool.id}`);
   els.discoveredValue.textContent = state.discovered.size;
   els.deepestValue.textContent = state.deepest;
 }
@@ -4184,6 +4239,9 @@ function resetDemo() {
   localStorage.removeItem("vi-major-saved-v2");
   localStorage.removeItem("vi-major-deepest-v2");
   localStorage.removeItem("vi-major-surface-v2");
+  localStorage.removeItem("vi-dig-level-v2");
+  localStorage.removeItem("vi-dig-xp-v2");
+  localStorage.removeItem("vi-interest-signals-v1");
   location.reload();
 }
 
@@ -4206,8 +4264,7 @@ function bindEvents() {
       } else if (nav === "collection") {
         location.href = "collection.html";
       } else if (nav === "report") {
-        const count = state.saved.size;
-        showToast(count ? `保存企業 ${count} 社。コレクションから比較できます` : "まず企業をコレクションに保存してください");
+        location.href = "report.html";
       }
     });
   });
