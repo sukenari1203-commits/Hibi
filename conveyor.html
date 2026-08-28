@@ -43,6 +43,7 @@ dialog{width:min(870px,calc(100vw - 28px));max-height:88vh;border:0;padding:0;bo
 <div class="conveyor"><div class="belt-top"></div><div class="rail"></div><div class="rollers"><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div></div><div class="legs"></div></div><div class="ore-layer" id="oreLayer"></div>
 <div class="status"><span class="dot"></span><b>LINE RUNNING</b>　未保存 <span id="remaining">100</span> / 100社</div><div class="hint">銀鉱石をクリック → 企業情報 → 図鑑に保存</div></main>
 <dialog id="companyDialog"><div class="modal-head"><div class="modal-ore" id="dialogOre">SME</div><div><small id="dialogIndustry"></small><h2 id="dialogName"></h2><p id="dialogSummary"></p></div><button class="close" id="closeDialog">×</button></div><div class="modal-body"><div class="snapshot" id="snapshot"></div><div class="tabs" id="tabs"></div><div id="detail"></div><div class="sources" id="sources"></div><div class="actions"><button class="save" id="saveBtn">図鑑に保存</button></div></div></dialog>
+<script src="company-data-client.js?v=20260828-all204"></script>
 <script>
 
 const INTEREST_KEY="vi-interest-signals-v1";
@@ -72,8 +73,8 @@ function renderConveyorVerified(c,key){
 function applyConveyorVerified(c,p){
   c.__verifiedProfile=p;const groups=window.VICompanyData.group(p);if(!groups.length)return;
   const vi=window.VICompanyData.point(p,"industry");if(vi)document.getElementById("dialogIndustry").textContent=vi.display_value;
-  const b=window.VICompanyData.point(p,"business_description");if(b)document.getElementById("dialogSummary").textContent=b.display_value;
-  const wanted=["starting_salary","annual_holidays","employee_count","revenue"],snap=[];
+  const b=window.VICompanyData.point(p,"business_description");document.getElementById("dialogSummary").textContent=b?b.display_value:"";
+  const wanted=["base_salary","starting_salary","annual_holidays","employee_count","revenue"],snap=[];
   wanted.forEach(k=>{const x=window.VICompanyData.point(p,k);if(x&&snap.length<4)snap.push(x)});
   document.getElementById("snapshot").innerHTML=snap.map(x=>`<div class="snap"><small>${esc(window.VICompanyData.fieldMeta[x.field_name]?.[1]||x.field_name)}</small><strong>${esc(x.display_value)}</strong><span>${esc(conveyorSourceLabel(x.source_type))}</span></div>`).join("");
   document.getElementById("tabs").innerHTML=groups.map((g,i)=>`<button class="tab ${i?"":"active"}" data-tab="${esc(g.key)}">${esc(g.label)}</button>`).join("");
@@ -86,14 +87,20 @@ async function loadConveyorVerified(c){
   try{
     let p=conveyorVerifiedCache.get(c.name);
     if(p===undefined){p=await window.VICompanyData.fetchVerifiedProfile(c.name);conveyorVerifiedCache.set(c.name,p||null)}
-    if(selected===c&&p?.data_points?.length)applyConveyorVerified(c,p);
-  }catch(e){console.warn("verified SME profile load failed",e)}
+    if(selected!==c)return;
+    if(p?.data_points?.length){applyConveyorVerified(c,p);return}
+    document.getElementById("dialogSummary").textContent="公開できる確認済みデータが現在登録されていません。";
+    document.getElementById("snapshot").innerHTML="";document.getElementById("tabs").innerHTML="";document.getElementById("detail").innerHTML="";document.getElementById("sources").innerHTML="";
+  }catch(e){
+    console.warn("verified SME profile load failed",e);
+    if(selected===c){document.getElementById("dialogSummary").textContent="確認済み企業データの読み込みに失敗しました。旧データにはフォールバックしません。";document.getElementById("snapshot").innerHTML="";document.getElementById("tabs").innerHTML="";document.getElementById("detail").innerHTML="";document.getElementById("sources").innerHTML="";}
+  }
 }
 
 const labels={compensation:"給与",benefits:"福利厚生",workstyle:"働き方・休日",career:"募集・キャリア"};
 function detailKeys(c){return ["compensation","benefits","workstyle","career"].filter(k=>c.details?.[k])}
 function renderDetail(c,key){if(c.__verifiedProfile){renderConveyorVerified(c,key);return}const sec=c.details[key],box=document.getElementById("detail");box.innerHTML=`<p class="summary">${esc(sec.summary)}</p>`+(sec.facts||[]).map(r=>`<div class="fact"><label>${esc(r[0])}</label><div>${esc(r[1])}</div><span class="pill">${esc(r[2])}</span></div>`).join("");document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===key))}
-function openCompany(c){selected=c;c.__verifiedProfile=null;recordSmeInterest(c.industry,"open");document.getElementById("dialogOre").textContent=glyphs[c.industry]||"◇";document.getElementById("dialogIndustry").textContent=c.industry;document.getElementById("dialogName").textContent=c.displayName;document.getElementById("dialogSummary").textContent=c.summary;document.getElementById("snapshot").innerHTML=c.snapshot.map(s=>`<div class="snap"><small>${esc(s[0])}</small><strong>${esc(s[1])}</strong><span>${esc(s[2])}</span></div>`).join("");const keys=detailKeys(c);document.getElementById("tabs").innerHTML=keys.map((k,i)=>`<button class="tab ${i?"":"active"}" data-tab="${k}">${labels[k]}</button>`).join("");document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>renderDetail(c,b.dataset.tab)));renderDetail(c,keys[0]);document.getElementById("sources").innerHTML=c.sources.map(s=>`<a class="source" href="${esc(s[2])}" target="_blank" rel="noopener"><b>${esc(s[0])}</b><br>${esc(s[1])} ↗</a>`).join("");const btn=document.getElementById("saveBtn");btn.textContent=saved.has(c.name)?"保存済み":"図鑑に保存";btn.classList.toggle("saved",saved.has(c.name));document.getElementById("companyDialog").showModal();loadConveyorVerified(c);track("sme_company_opened",c)}
+function openCompany(c){selected=c;c.__verifiedProfile=null;recordSmeInterest(c.industry,"open");document.getElementById("dialogOre").textContent=glyphs[c.industry]||"◇";document.getElementById("dialogIndustry").textContent=c.industry;document.getElementById("dialogName").textContent=c.displayName;document.getElementById("dialogSummary").textContent="確認済み公開情報を読み込んでいます…";document.getElementById("snapshot").innerHTML="";document.getElementById("tabs").innerHTML="";document.getElementById("detail").innerHTML="";document.getElementById("sources").innerHTML="";const btn=document.getElementById("saveBtn");btn.textContent=saved.has(c.name)?"保存済み":"図鑑に保存";btn.classList.toggle("saved",saved.has(c.name));document.getElementById("companyDialog").showModal();loadConveyorVerified(c);track("sme_company_opened",c)}
 document.getElementById("closeDialog").addEventListener("click",()=>document.getElementById("companyDialog").close());
 document.getElementById("saveBtn").addEventListener("click",()=>{if(!selected)return;if(saved.has(selected.name))return;saved.add(selected.name);recordSmeInterest(selected.industry,"save");localStorage.setItem(SAVED_KEY,JSON.stringify([...saved]));const el=active.get(selected.name);if(el){el.remove();active.delete(selected.name)};document.querySelectorAll(`.ore[data-company="${CSS.escape(selected.name)}"]`).forEach(x=>x.remove());document.getElementById("saveBtn").textContent="保存済み";document.getElementById("saveBtn").classList.add("saved");updateRemaining();track("sme_company_saved",selected)});
 const ANALYTICS_CONFIG={supabaseUrl:"https://ioznepuggdzagmckljbp.supabase.co",publishableKey:"sb_publishable_JAPUbLW_UTupYjKxmWFCXg_NicyJxn5"};const sessionId=localStorage.getItem("vi-analytics-session-v1");async function track(type,c){if(!sessionId)return;try{await fetch(`${ANALYTICS_CONFIG.supabaseUrl}/rest/v1/events`,{method:"POST",headers:{apikey:ANALYTICS_CONFIG.publishableKey,Authorization:`Bearer ${ANALYTICS_CONFIG.publishableKey}`,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify([{session_id:sessionId,event_type:type,industry:c?.industry||null,company:c?.displayName||null,x_position:null,depth_m:null,metadata:{source:"sme_conveyor"}}])})}catch(_){}}

@@ -188,7 +188,7 @@ button{cursor:pointer}
   <div class="sources" id="sources"></div>
 </dialog>
 
-<script src="company-data-client.js?v=20260828-2"></script>
+<script src="company-data-client.js?v=20260828-all204"></script>
 <script>
 const ANALYTICS_CONFIG = {
   supabaseUrl: "https://ioznepuggdzagmckljbp.supabase.co",
@@ -335,7 +335,7 @@ function renderAtlas(){
   }));
 }
 
-const VERIFIED_COLLECTION_POC = new Set(["Sony Group","ITOCHU","Hitachi"]);
+const VERIFIED_COLLECTION_ALL = true;
 const verifiedCollectionCache = new Map();
 function sourceTypeLabel(t){
   return ({official_site:"企業公式",official_recruit:"公式採用",official_ir:"公式IR",annual_securities_report:"有価証券報告書",integrated_report:"統合報告書",public_agency:"公的機関"})[t]||"公開情報";
@@ -357,8 +357,8 @@ function applyCollectionVerified(c,profile){
   if(!groups.length)return;
   const verifiedIndustry=window.VICompanyData.point(profile,"industry");if(verifiedIndustry)document.getElementById("dialogIndustry").textContent=verifiedIndustry.display_value;
   const business=window.VICompanyData.point(profile,"business_description");
-  if(business)document.getElementById("dialogSummary").textContent=business.display_value;
-  const wanted=["starting_salary","annual_holidays","employee_count_consolidated","employee_count","revenue"];
+  document.getElementById("dialogSummary").textContent=business?business.display_value:"";
+  const wanted=["base_salary","starting_salary","annual_holidays","employee_count_consolidated","employee_count","revenue"];
   const pts=[]; const seen=new Set();
   wanted.forEach(k=>{const x=window.VICompanyData.point(profile,k);if(x&&!seen.has(x.field_name)&&pts.length<4){seen.add(x.field_name);pts.push(x)}});
   document.getElementById("snapshot").innerHTML=pts.map(x=>`<div class="snap"><small>${esc(window.VICompanyData.fieldMeta[x.field_name]?.[1]||x.field_name)}</small><strong>${esc(x.display_value)}</strong><span>${esc(sourceTypeLabel(x.source_type))}</span></div>`).join("");
@@ -374,13 +374,13 @@ async function loadCollectionVerified(c){
     if(profile===undefined){profile=await window.VICompanyData.fetchVerifiedProfile(c.name);verifiedCollectionCache.set(c.name,profile||null)}
     if(selected!==c)return;
     if(profile?.data_points?.length)applyCollectionVerified(c,profile);
-    else if(VERIFIED_COLLECTION_POC.has(c.name)){
-      document.getElementById("dialogSummary").textContent="Verified DataのSupabase migration適用後、根拠確認済み情報だけを表示します。";
+    else if(VERIFIED_COLLECTION_ALL){
+      document.getElementById("dialogSummary").textContent="確認済み公開情報は現在登録されている項目だけを表示します。";
       document.getElementById("snapshot").innerHTML="";document.getElementById("tabs").innerHTML="";document.getElementById("detail").innerHTML="";document.getElementById("sources").innerHTML="";
     }
   }catch(e){
     console.warn("verified collection profile failed",e);
-    if(VERIFIED_COLLECTION_POC.has(c.name)&&selected===c){
+    if(VERIFIED_COLLECTION_ALL&&selected===c){
       document.getElementById("dialogSummary").textContent="確認済み企業データの読み込みに失敗しました。推測データは表示しません。";
       document.getElementById("snapshot").innerHTML="";document.getElementById("tabs").innerHTML="";document.getElementById("detail").innerHTML="";document.getElementById("sources").innerHTML="";
     }
@@ -412,7 +412,7 @@ function openCompany(c){
   document.getElementById("dialogIndustry").textContent=c.industry||"";
   document.getElementById("dialogName").textContent=c.displayName||c.name;
   document.getElementById("dialogSummary").textContent=c.summary||"";
-  if(VERIFIED_COLLECTION_POC.has(c.name)){
+  if(VERIFIED_COLLECTION_ALL){
     document.getElementById("dialogSummary").textContent="確認済み公開情報を読み込んでいます…";
     document.getElementById("snapshot").innerHTML="";
     document.getElementById("tabs").innerHTML="";

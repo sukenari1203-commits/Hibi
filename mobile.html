@@ -2699,7 +2699,7 @@ body.mobile-experience .quarry-scroll-cue {
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="company-data-client.js?v=20260828-2"></script>
+  <script src="company-data-client.js?v=20260828-all204"></script>
   <script>
 
 /* ===== VENTURE INFO anonymous analytics ===== */
@@ -4081,7 +4081,7 @@ function physicsFrame(now) {
 }
 
 
-const VERIFIED_POC_KEYS = new Set(["Sony Group", "ITOCHU", "Hitachi"]);
+const VERIFIED_ALL_COMPANIES = true;
 const verifiedProfileCache = new Map();
 
 function viEsc(value) {
@@ -4159,7 +4159,7 @@ function applyVerifiedProfile(company, profile) {
   const business = window.VICompanyData.point(profile, "business_description");
   if (business) document.getElementById("dialogSummary").textContent = business.display_value;
 
-  const snapshotFields = ["starting_salary","annual_holidays","employee_count_consolidated","employee_count","revenue"];
+  const snapshotFields = ["base_salary","starting_salary","annual_holidays","employee_count_consolidated","employee_count","revenue"];
   const seen = new Set();
   const snapshots = [];
   for (const field of snapshotFields) {
@@ -4207,8 +4207,8 @@ async function loadVerifiedProfile(company) {
     if (state.selectedCompany !== company) return;
     if (profile && profile.data_points?.length) {
       applyVerifiedProfile(company, profile);
-    } else if (VERIFIED_POC_KEYS.has(company.name)) {
-      document.getElementById("dialogSummary").textContent = "Verified DataのSupabase migrationを適用すると、この企業の確認済み公開情報だけが表示されます。";
+    } else if (VERIFIED_ALL_COMPANIES) {
+      document.getElementById("dialogSummary").textContent = "確認済み公開情報は現在登録されている項目だけを表示します。";
       els.snapshotGrid.innerHTML = "";
       els.detailTabs.innerHTML = "";
       els.detailBody.innerHTML = "";
@@ -4216,7 +4216,7 @@ async function loadVerifiedProfile(company) {
     }
   } catch (err) {
     console.warn("Verified company profile load failed", err);
-    if (VERIFIED_POC_KEYS.has(company.name) && state.selectedCompany === company) {
+    if (VERIFIED_ALL_COMPANIES && state.selectedCompany === company) {
       document.getElementById("dialogSummary").textContent = "確認済み企業データの読み込みに失敗しました。既存の推測データへはフォールバックしません。";
       els.snapshotGrid.innerHTML = "";
       els.detailTabs.innerHTML = "";
@@ -4310,7 +4310,7 @@ function openCompany(company) {
   document.getElementById("saveCompanyBtn").textContent =
     state.saved.has(company.name) ? "保存済み" : "コレクションに保存";
 
-  if (VERIFIED_POC_KEYS.has(company.name)) {
+  if (VERIFIED_ALL_COMPANIES) {
     document.getElementById("dialogSummary").textContent = "確認済み公開情報を読み込んでいます…";
     els.snapshotGrid.innerHTML = "";
     els.detailTabs.innerHTML = "";

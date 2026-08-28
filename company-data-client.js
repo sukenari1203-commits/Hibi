@@ -25,13 +25,17 @@
     main_customers: ["business", "主な顧客"],
     business_model_summary: ["business", "ビジネスモデル"],
     company_strength: ["business", "公式資料で確認できる強み"],
+    career_program: ["business", "職種・キャリア"],
 
-    starting_salary: ["recruitment", "初任給"],
+    base_salary: ["recruitment", "基本給"],
+    starting_salary: ["recruitment", "初任給・月給・年俸"],
     average_salary: ["recruitment", "平均年収"],
     work_location: ["recruitment", "勤務地"],
     recruitment_count: ["recruitment", "採用人数"],
     bonus: ["recruitment", "賞与"],
     salary_review: ["recruitment", "給与改定"],
+    allowances: ["recruitment", "その他手当"],
+    compensation_policy: ["recruitment", "昇給・賞与・評価"],
 
     annual_holidays: ["workstyle", "年間休日"],
     holidays: ["workstyle", "休日"],
@@ -42,6 +46,7 @@
     flex_time: ["workstyle", "フレックスタイム"],
     side_job_allowed: ["workstyle", "副業"],
     working_hours: ["workstyle", "勤務時間"],
+    workstyle_overview: ["workstyle", "勤務制度・休日"],
 
     housing_allowance: ["benefits", "住宅補助"],
     training_program: ["benefits", "研修・能力開発"],
@@ -54,7 +59,8 @@
     growth_rate: ["performance", "成長率"],
     overseas_ratio: ["performance", "海外比率"],
     average_age: ["performance", "平均年齢"],
-    average_tenure: ["performance", "平均勤続年数"]
+    average_tenure: ["performance", "平均勤続年数"],
+    performance_summary: ["performance", "公式業績情報"]
   };
 
   const NON_VALUES = new Set(["", "null", "undefined", "不明", "情報なし", "なし", "n/a", "N/A", "-", "—"]);
