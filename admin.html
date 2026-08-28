@@ -100,6 +100,17 @@
     .lock-error { min-height:18px; margin-top:10px; color:var(--bad); font-size:10px; }
     .lock-meta { margin-top:14px; color:#6f797c; font-size:9px; line-height:1.6; }
 
+
+    .quality-table{width:100%;border-collapse:collapse;margin-top:14px;font-size:10px}
+    .quality-table th,.quality-table td{padding:10px 8px;border-bottom:1px solid #2b3133;text-align:left;vertical-align:top}
+    .quality-table th{color:#7f898c;font-size:8px;letter-spacing:.08em}
+    .quality-table td strong{color:#f1eadf}
+    .quality-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .quality-actions button{min-height:34px;font-size:9px}
+    .candidate-card{margin-top:8px;padding:12px;border:1px solid #303638;border-radius:9px;background:#101314;font-size:10px;line-height:1.6}
+    .candidate-card a{color:var(--gold)}
+    .candidate-card .meta{color:#8d989a;margin-top:5px}
+
     @media (max-width:850px) {
       .grid { grid-template-columns:1fr; }
       .row { grid-template-columns:1fr; }
@@ -198,10 +209,36 @@
     <div class="error" id="sessionError"></div>
     <div class="session-result" id="sessionResult"></div>
   </section>
+
+  <section class="panel" id="companyQualityPanel">
+    <h2>Company Data Quality</h2>
+    <div class="sub">Verified Fields / Source Coverage / High Confidence / Freshness を確認。再調査は別の company-research Edge Function で実行します。</div>
+    <div class="row">
+      <input id="researchLookup" placeholder="Sony Group / ITOCHU / Hitachi / company_id" />
+      <button class="secondary" id="researchBtn">この企業を再調査</button>
+    </div>
+    <div class="quality-actions" style="margin-top:10px">
+      <button class="secondary" id="qualityRefreshBtn">品質KPIを更新</button>
+      <button class="secondary" id="staleBtn">180日超を確認</button>
+    </div>
+    <div class="error" id="companyResearchError"></div>
+    <div id="companyResearchStatus" class="sub" style="margin:8px 0 0"></div>
+    <div style="overflow:auto">
+      <table class="quality-table">
+        <thead><tr><th>企業</th><th>Verified</th><th>Source</th><th>High</th><th>最終確認</th><th>Freshness</th><th></th></tr></thead>
+        <tbody id="qualityBody"><tr><td colspan="7">「品質KPIを更新」で読み込みます。</td></tr></tbody>
+      </table>
+    </div>
+    <h3 style="margin:24px 0 4px;font:500 17px Georgia,serif">Medium candidates</h3>
+    <div class="sub">Web上で候補が見つかっても、自動的に公式ドメインと確認できなかった情報は公開されません。</div>
+    <div id="candidateList"></div>
+  </section>
+
 </main>
 
 <script>
 const FUNCTION_URL = "https://ioznepuggdzagmckljbp.supabase.co/functions/v1/smart-endpoint";
+const COMPANY_RESEARCH_URL = "https://ioznepuggdzagmckljbp.supabase.co/functions/v1/company-research";
 
 const $ = (id) => document.getElementById(id);
 const tokenInput = $("adminToken");
@@ -394,6 +431,92 @@ $("sessionBtn").addEventListener("click", async () => {
     $("sessionResult").innerHTML = "";
   }
 });
+
+async function callCompanyResearch(payload) {
+  const token = tokenInput.value.trim() || sessionStorage.getItem("vi-admin-token") || "";
+  if (!token) throw new Error("ADMIN PIN を入力してください。");
+  const res = await fetch(COMPANY_RESEARCH_URL, {
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-admin-token":token},
+    body:JSON.stringify(payload)
+  });
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+function dateOnly(v){ return v ? String(v).slice(0,10) : "—"; }
+async function refreshCompanyQuality() {
+  $("companyResearchError").textContent="";
+  $("companyResearchStatus").textContent="品質KPIを読み込み中…";
+  try{
+    const [quality,candidates]=await Promise.all([
+      callCompanyResearch({mode:"quality"}),
+      callCompanyResearch({mode:"candidates"})
+    ]);
+    const rows=quality.companies||[];
+    $("qualityBody").innerHTML=rows.map(r=>`<tr>
+      <td><strong>${escapeHtml(r.display_name)}</strong><br><span style="color:#7f898c">${escapeHtml(r.app_company_key)}</span></td>
+      <td>${escapeHtml(r.verified_fields)}</td>
+      <td>${escapeHtml(r.source_coverage_rate)}%</td>
+      <td>${escapeHtml(r.high_confidence_rate)}%</td>
+      <td>${escapeHtml(dateOnly(r.last_verified_at))}</td>
+      <td>${r.freshness_days===null?"—":escapeHtml(r.freshness_days)+"日"}</td>
+      <td><button class="secondary research-row" data-lookup="${escapeHtml(r.app_company_key)}">再調査</button></td>
+    </tr>`).join("") || `<tr><td colspan="7">企業データなし</td></tr>`;
+    $("candidateList").innerHTML=(candidates.candidates||[]).map(c=>`<div class="candidate-card">
+      <strong>${escapeHtml(c.companies?.display_name||"")}</strong> · ${escapeHtml(c.field_name)}<br>
+      ${escapeHtml(c.display_value||"")}
+      <div class="meta">${escapeHtml(c.confidence)} · ${escapeHtml(c.reason||"")}</div>
+      ${c.source_url?`<a href="${escapeHtml(c.source_url)}" target="_blank" rel="noopener">source ↗</a>`:""}
+      <div class="quality-actions" style="margin-top:8px">
+        <button class="secondary verify-candidate" data-id="${escapeHtml(c.id)}">公式Sourceとして再検証</button>
+        <button class="secondary dismiss-candidate" data-id="${escapeHtml(c.id)}">却下</button>
+      </div>
+    </div>`).join("") || `<div class="sub">pending candidate はありません。</div>`;
+    $("companyResearchStatus").textContent=`${rows.length}社のKPI / ${(candidates.candidates||[]).length}件のmedium候補`;
+  }catch(e){
+    $("companyResearchError").textContent=e.message;
+    $("companyResearchStatus").textContent="";
+  }
+}
+async function runCompanyResearch(lookup){
+  if(!lookup) throw new Error("企業名またはcompany_idを入力してください。");
+  $("companyResearchStatus").textContent=`${lookup} を公式情報優先で調査中…`;
+  const payload=/^[0-9a-f-]{36}$/i.test(lookup)?{mode:"research",company_id:lookup}:{mode:"research",lookup};
+  const data=await callCompanyResearch(payload);
+  $("companyResearchStatus").textContent=`${data.company}: 発見${data.fieldsFound} / high ${data.high} / medium ${data.medium} / 更新 ${data.updated}`;
+  await refreshCompanyQuality();
+}
+$("qualityRefreshBtn").addEventListener("click",refreshCompanyQuality);
+$("researchBtn").addEventListener("click",async()=>{
+  $("companyResearchError").textContent="";
+  const btn=$("researchBtn"); btn.disabled=true;
+  try{await runCompanyResearch($("researchLookup").value.trim())}catch(e){$("companyResearchError").textContent=e.message}finally{btn.disabled=false}
+});
+$("staleBtn").addEventListener("click",async()=>{
+  $("companyResearchError").textContent="";
+  try{
+    const data=await callCompanyResearch({mode:"stale",days:180});
+    const names=(data.companies||[]).map(x=>`${x.display_name}${x.freshness_days===null?" (未確認)":` (${x.freshness_days}日)`}`);
+    $("companyResearchStatus").textContent=names.length?`再調査候補: ${names.join(" / ")}`:"180日超の企業はありません。";
+  }catch(e){$("companyResearchError").textContent=e.message}
+});
+$("qualityBody").addEventListener("click",async(e)=>{
+  const btn=e.target.closest(".research-row"); if(!btn)return;
+  $("researchLookup").value=btn.dataset.lookup; btn.disabled=true;
+  try{await runCompanyResearch(btn.dataset.lookup)}catch(err){$("companyResearchError").textContent=err.message}finally{btn.disabled=false}
+});
+$("candidateList").addEventListener("click",async(e)=>{
+  const verify=e.target.closest(".verify-candidate");
+  const dismiss=e.target.closest(".dismiss-candidate");
+  if(!verify&&!dismiss)return;
+  const btn=verify||dismiss; btn.disabled=true;
+  try{
+    await callCompanyResearch({mode:verify?"verify_official_candidate":"dismiss_candidate",candidate_id:btn.dataset.id});
+    await refreshCompanyQuality();
+  }catch(err){$("companyResearchError").textContent=err.message;btn.disabled=false}
+});
+
 </script>
 </body>
 </html>

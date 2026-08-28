@@ -188,6 +188,7 @@ button{cursor:pointer}
   <div class="sources" id="sources"></div>
 </dialog>
 
+<script src="company-data-client.js"></script>
 <script>
 const ANALYTICS_CONFIG = {
   supabaseUrl: "https://ioznepuggdzagmckljbp.supabase.co",
@@ -333,12 +334,66 @@ function renderAtlas(){
     const c=catalog.find(x=>x.name===btn.dataset.company); if(c) openCompany(c);
   }));
 }
+
+const VERIFIED_COLLECTION_POC = new Set(["Sony Group","ITOCHU","Hitachi"]);
+const verifiedCollectionCache = new Map();
+function sourceTypeLabel(t){
+  return ({official_site:"企業公式",official_recruit:"公式採用",official_ir:"公式IR",annual_securities_report:"有価証券報告書",integrated_report:"統合報告書",public_agency:"公的機関"})[t]||"公開情報";
+}
+function renderVerifiedCollectionDetail(c,key){
+  const groups=window.VICompanyData?.group(c.__verifiedProfile)||[];
+  const group=groups.find(g=>g.key===key)||groups[0];
+  const detail=document.getElementById("detail");
+  if(!group){detail.innerHTML="";return}
+  const q=window.VICompanyData.quality(c.__verifiedProfile);
+  detail.innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px">
+    <span class="pill">Verified ${q.verifiedFields}</span><span class="pill">Source ${q.sourceCoverageRate}%</span><span class="pill">High ${q.highConfidenceRate}%</span>
+  </div>`+group.points.map(p=>`<div class="fact"><label>${esc(p.label)}</label><div>${esc(p.display_value)}</div><a class="pill" href="${esc(p.source_url)}" target="_blank" rel="noopener">${esc(sourceTypeLabel(p.source_type))} ↗</a></div>`).join("");
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===group.key));
+}
+function applyCollectionVerified(c,profile){
+  c.__verifiedProfile=profile;
+  const groups=window.VICompanyData.group(profile);
+  if(!groups.length)return;
+  const verifiedIndustry=window.VICompanyData.point(profile,"industry");if(verifiedIndustry)document.getElementById("dialogIndustry").textContent=verifiedIndustry.display_value;
+  const business=window.VICompanyData.point(profile,"business_description");
+  if(business)document.getElementById("dialogSummary").textContent=business.display_value;
+  const wanted=["starting_salary","annual_holidays","employee_count_consolidated","employee_count","revenue"];
+  const pts=[]; const seen=new Set();
+  wanted.forEach(k=>{const x=window.VICompanyData.point(profile,k);if(x&&!seen.has(x.field_name)&&pts.length<4){seen.add(x.field_name);pts.push(x)}});
+  document.getElementById("snapshot").innerHTML=pts.map(x=>`<div class="snap"><small>${esc(window.VICompanyData.fieldMeta[x.field_name]?.[1]||x.field_name)}</small><strong>${esc(x.display_value)}</strong><span>${esc(sourceTypeLabel(x.source_type))}</span></div>`).join("");
+  document.getElementById("tabs").innerHTML=groups.map((g,i)=>`<button class="tab ${i===0?"active":""}" data-tab="${esc(g.key)}">${esc(g.label)}</button>`).join("");
+  document.getElementById("tabs").querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>renderVerifiedCollectionDetail(c,btn.dataset.tab)));
+  document.getElementById("sources").innerHTML=window.VICompanyData.uniqueSources(profile).map(s=>`<a class="source" href="${esc(s.source_url)}" target="_blank" rel="noopener"><b>${esc(s.source_title||sourceTypeLabel(s.source_type))}</b><br>${esc(sourceTypeLabel(s.source_type))} · high ↗</a>`).join("");
+  renderVerifiedCollectionDetail(c,groups[0].key);
+}
+async function loadCollectionVerified(c){
+  if(!window.VICompanyData)return;
+  try{
+    let profile=verifiedCollectionCache.get(c.name);
+    if(profile===undefined){profile=await window.VICompanyData.fetchVerifiedProfile(c.name);verifiedCollectionCache.set(c.name,profile||null)}
+    if(selected!==c)return;
+    if(profile?.data_points?.length)applyCollectionVerified(c,profile);
+    else if(VERIFIED_COLLECTION_POC.has(c.name)){
+      document.getElementById("dialogSummary").textContent="Verified DataのSupabase migration適用後、根拠確認済み情報だけを表示します。";
+      document.getElementById("snapshot").innerHTML="";document.getElementById("tabs").innerHTML="";document.getElementById("detail").innerHTML="";document.getElementById("sources").innerHTML="";
+    }
+  }catch(e){
+    console.warn("verified collection profile failed",e);
+    if(VERIFIED_COLLECTION_POC.has(c.name)&&selected===c){
+      document.getElementById("dialogSummary").textContent="確認済み企業データの読み込みに失敗しました。推測データは表示しません。";
+      document.getElementById("snapshot").innerHTML="";document.getElementById("tabs").innerHTML="";document.getElementById("detail").innerHTML="";document.getElementById("sources").innerHTML="";
+    }
+  }
+}
+
 function detailKeys(c){
   const order=["compensation","benefits","stability","culture","workstyle","career"];
   return order.filter(k=>c.details&&c.details[k]);
 }
 const labels={compensation:"給料・待遇",benefits:"福利厚生",stability:"経営安定性",culture:"社風・人間関係",workstyle:"働き方",career:"成長・キャリア"};
 function renderDetail(c,key){
+  if(c.__verifiedProfile){renderVerifiedCollectionDetail(c,key);return;}
   const section=c.details?.[key];
   const detail=document.getElementById("detail");
   if(!section){detail.innerHTML="";return}
@@ -348,6 +403,7 @@ function renderDetail(c,key){
 }
 function openCompany(c){
   selected=c;
+  c.__verifiedProfile=null;
   const dialogGem=document.getElementById("dialogGem");
   dialogGem.className=`dgem${c.legendary?" legendary":""}${c.sme?" silver":""}`;
   dialogGem.style.setProperty("--hue",hashHue(c.industry+c.name));
@@ -356,13 +412,22 @@ function openCompany(c){
   document.getElementById("dialogIndustry").textContent=c.industry||"";
   document.getElementById("dialogName").textContent=c.displayName||c.name;
   document.getElementById("dialogSummary").textContent=c.summary||"";
-  document.getElementById("snapshot").innerHTML=(c.snapshot||[]).map(s=>`<div class="snap"><small>${esc(s[0])}</small><strong>${esc(s[1])}</strong><span>${esc(s[2])}</span></div>`).join("");
-  const keys=detailKeys(c);
-  document.getElementById("tabs").innerHTML=keys.map((k,i)=>`<button class="tab ${i===0?"active":""}" data-tab="${k}">${labels[k]||k}</button>`).join("");
-  document.getElementById("tabs").querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>renderDetail(c,btn.dataset.tab)));
-  renderDetail(c,keys[0]);
-  document.getElementById("sources").innerHTML=(c.sources||[]).map(s=>`<a class="source" href="${esc(s[2])}" target="_blank" rel="noopener"><b>${esc(s[0])}</b><br>${esc(s[1])} ↗</a>`).join("");
+  if(VERIFIED_COLLECTION_POC.has(c.name)){
+    document.getElementById("dialogSummary").textContent="確認済み公開情報を読み込んでいます…";
+    document.getElementById("snapshot").innerHTML="";
+    document.getElementById("tabs").innerHTML="";
+    document.getElementById("detail").innerHTML="";
+    document.getElementById("sources").innerHTML="";
+  }else{
+    document.getElementById("snapshot").innerHTML=(c.snapshot||[]).map(s=>`<div class="snap"><small>${esc(s[0])}</small><strong>${esc(s[1])}</strong><span>${esc(s[2])}</span></div>`).join("");
+    const keys=detailKeys(c);
+    document.getElementById("tabs").innerHTML=keys.map((k,i)=>`<button class="tab ${i===0?"active":""}" data-tab="${k}">${labels[k]||k}</button>`).join("");
+    document.getElementById("tabs").querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>renderDetail(c,btn.dataset.tab)));
+    renderDetail(c,keys[0]);
+    document.getElementById("sources").innerHTML=(c.sources||[]).map(s=>`<a class="source" href="${esc(s[2])}" target="_blank" rel="noopener"><b>${esc(s[0])}</b><br>${esc(s[1])} ↗</a>`).join("");
+  }
   document.getElementById("companyDialog").showModal();
+  loadCollectionVerified(c);
   track("company_opened",{industry:c.industry,company:c.displayName,depth_m:c.depth,metadata:{source:"collection_atlas"}});
 }
 document.getElementById("closeDialog").addEventListener("click",()=>document.getElementById("companyDialog").close());

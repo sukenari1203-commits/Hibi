@@ -2414,6 +2414,20 @@ body.mobile-experience .quarry-scroll-cue {
 .mine-stage.soil-hover.tool-drill,.mine-stage.soil-hover.tool-drill #digCanvas{cursor:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2244%22%20height%3D%2244%22%20viewBox%3D%220%200%2044%2044%22%3E%3Cg%20transform%3D%22rotate%28-28%2022%2022%29%22%3E%3Cpath%20d%3D%22M7%2012h23c3%200%205%202%205%205v7H14c-4%200-7-3-7-7z%22%20fill%3D%22%23e0aa2f%22%20stroke%3D%22%2351431d%22%20stroke-width%3D%221.6%22%2F%3E%3Cpath%20d%3D%22M17%2024h10l-2%2013h-8z%22%20fill%3D%22%23222%22%20stroke%3D%22%230e0e0e%22%20stroke-width%3D%221.4%22%2F%3E%3Cpath%20d%3D%22M35%2017h5l3%203-3%203h-5z%22%20fill%3D%22%23c9d0d5%22%20stroke%3D%22%23555%22%20stroke-width%3D%221.4%22%2F%3E%3Ccircle%20cx%3D%2214%22%20cy%3D%2218%22%20r%3D%223%22%20fill%3D%22%23f4d36a%22%2F%3E%3Cpath%20d%3D%22M19%2028h5%22%20stroke%3D%22%23d8d8d8%22%20stroke-width%3D%222%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 35 24,pointer !important}
 .tool-now{display:block;margin-top:4px;color:#a97717;font-size:9px;font-weight:900;letter-spacing:.06em}
 
+
+/* ===== Verified Supabase company profile PoC ===== */
+.verified-data-banner{
+  margin:14px 0 0;padding:10px 12px;border:1px solid rgba(35,116,83,.18);
+  border-radius:8px;background:rgba(230,247,239,.72);color:#245b47;
+  font-size:9px;font-weight:800;letter-spacing:.06em;line-height:1.6;
+}
+.verified-data-banner.loading{color:#80631e;background:rgba(248,239,209,.7);border-color:rgba(161,124,35,.2)}
+.verified-fact-source{white-space:nowrap;text-decoration:none}
+.verified-fact-source:hover{text-decoration:underline}
+.verified-quality{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.verified-quality span{padding:6px 8px;border:1px solid rgba(55,108,80,.15);border-radius:99px;background:#f4faf6;color:#315c49;font-size:8px;font-weight:800}
+.verified-empty-tech{padding:24px 0;color:#7a6d5c;font-size:11px;line-height:1.7}
+
 </style>
 </head>
 <body class="mobile-experience">
@@ -2685,6 +2699,7 @@ body.mobile-experience .quarry-scroll-cue {
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <script src="company-data-client.js"></script>
   <script>
 
 /* ===== VENTURE INFO anonymous analytics ===== */
@@ -4065,6 +4080,152 @@ function physicsFrame(now) {
   requestAnimationFrame(physicsFrame);
 }
 
+
+const VERIFIED_POC_KEYS = new Set(["Sony Group", "ITOCHU", "Hitachi"]);
+const verifiedProfileCache = new Map();
+
+function viEsc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[ch]));
+}
+
+function verifiedSourceLabel(type) {
+  return ({
+    official_site:"企業公式",
+    official_recruit:"公式採用",
+    official_ir:"公式IR",
+    annual_securities_report:"有価証券報告書",
+    integrated_report:"統合報告書",
+    public_agency:"公的機関"
+  })[type] || "公開情報";
+}
+
+function restoreLegacyDetailTabs() {
+  els.detailTabs.innerHTML = `
+    <button class="detail-tab active" data-detail="compensation">給料・評価</button>
+    <button class="detail-tab" data-detail="benefits">福利厚生</button>
+    <button class="detail-tab" data-detail="stability">経営安定性</button>
+    <button class="detail-tab" data-detail="culture">社風・人間関係</button>
+    <button class="detail-tab" data-detail="workstyle">働き方</button>
+    <button class="detail-tab" data-detail="career">成長・キャリア</button>`;
+  els.detailTabs.querySelectorAll(".detail-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (!state.selectedCompany) return;
+      state.detailTab = btn.dataset.detail;
+      renderDetail(state.selectedCompany, state.detailTab);
+    });
+  });
+}
+
+function renderVerifiedDetail(company, categoryKey) {
+  const profile = company.__verifiedProfile;
+  if (!profile || !window.VICompanyData) return;
+  const groups = window.VICompanyData.group(profile);
+  const group = groups.find(g => g.key === categoryKey) || groups[0];
+  if (!group) {
+    els.detailBody.innerHTML = "";
+    return;
+  }
+  const q = window.VICompanyData.quality(profile);
+  els.detailBody.innerHTML = `
+    <div class="verified-quality">
+      <span>Verified Fields ${q.verifiedFields}</span>
+      <span>Source Coverage ${q.sourceCoverageRate}%</span>
+      <span>High Confidence ${q.highConfidenceRate}%</span>
+      ${q.lastVerifiedAt ? `<span>Verified ${viEsc(String(q.lastVerifiedAt).slice(0,10))}</span>` : ""}
+    </div>
+    <div class="fact-list">
+      ${group.points.map(p => `
+        <div class="fact-row">
+          <div class="fact-label">${viEsc(p.label)}</div>
+          <div class="fact-value">${viEsc(p.display_value)}</div>
+          <a class="source-pill official verified-fact-source" href="${viEsc(p.source_url)}" target="_blank" rel="noopener">${viEsc(verifiedSourceLabel(p.source_type))} ↗</a>
+        </div>`).join("")}
+    </div>`;
+  els.detailTabs.querySelectorAll(".detail-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.detail === group.key);
+  });
+  state.detailTab = group.key;
+}
+
+function applyVerifiedProfile(company, profile) {
+  company.__verifiedProfile = profile;
+  const groups = window.VICompanyData.group(profile);
+  if (!groups.length) return;
+
+  const verifiedIndustry = window.VICompanyData.point(profile, "industry");
+  if (verifiedIndustry) document.getElementById("dialogIndustry").textContent = verifiedIndustry.display_value;
+  const business = window.VICompanyData.point(profile, "business_description");
+  if (business) document.getElementById("dialogSummary").textContent = business.display_value;
+
+  const snapshotFields = ["starting_salary","annual_holidays","employee_count_consolidated","employee_count","revenue"];
+  const seen = new Set();
+  const snapshots = [];
+  for (const field of snapshotFields) {
+    const p = window.VICompanyData.point(profile, field);
+    if (!p || seen.has(p.field_name) || snapshots.length >= 4) continue;
+    seen.add(p.field_name);
+    snapshots.push(p);
+  }
+  els.snapshotGrid.innerHTML = snapshots.map(p => {
+    const meta = window.VICompanyData.fieldMeta[p.field_name];
+    return `<div class="snapshot-card"><small>${viEsc(meta ? meta[1] : p.field_name)}</small><strong>${viEsc(p.display_value)}</strong><span>${viEsc(verifiedSourceLabel(p.source_type))}</span></div>`;
+  }).join("");
+
+  els.detailTabs.innerHTML = groups.map((g, i) =>
+    `<button class="detail-tab ${i===0?"active":""}" data-detail="${viEsc(g.key)}">${viEsc(g.label)}</button>`
+  ).join("");
+  els.detailTabs.querySelectorAll(".detail-tab").forEach(btn => {
+    btn.addEventListener("click", () => renderVerifiedDetail(company, btn.dataset.detail));
+  });
+
+  const sources = window.VICompanyData.uniqueSources(profile);
+  els.dialogSources.innerHTML = sources.map(p => `
+    <a class="source-link" href="${viEsc(p.source_url)}" target="_blank" rel="noopener">
+      <strong>${viEsc(p.source_title || verifiedSourceLabel(p.source_type))}</strong>
+      <span>${viEsc(verifiedSourceLabel(p.source_type))} · verified ${viEsc(String(p.verified_at || "").slice(0,10))} ↗</span>
+    </a>`).join("");
+
+  const q = window.VICompanyData.quality(profile);
+  const banner = document.querySelector(".official-data-banner");
+  if (banner) {
+    banner.className = "official-data-banner verified-data-banner";
+    banner.textContent = `VERIFIED PUBLIC DATA · ${q.verifiedFields}項目 · HIGH CONFIDENCE ONLY · 根拠のない項目は表示していません`;
+  }
+  renderVerifiedDetail(company, groups[0].key);
+}
+
+async function loadVerifiedProfile(company) {
+  if (!window.VICompanyData) return;
+  try {
+    let profile = verifiedProfileCache.get(company.name);
+    if (profile === undefined) {
+      profile = await window.VICompanyData.fetchVerifiedProfile(company.name);
+      verifiedProfileCache.set(company.name, profile || null);
+    }
+    if (state.selectedCompany !== company) return;
+    if (profile && profile.data_points?.length) {
+      applyVerifiedProfile(company, profile);
+    } else if (VERIFIED_POC_KEYS.has(company.name)) {
+      document.getElementById("dialogSummary").textContent = "Verified DataのSupabase migrationを適用すると、この企業の確認済み公開情報だけが表示されます。";
+      els.snapshotGrid.innerHTML = "";
+      els.detailTabs.innerHTML = "";
+      els.detailBody.innerHTML = "";
+      els.dialogSources.innerHTML = "";
+    }
+  } catch (err) {
+    console.warn("Verified company profile load failed", err);
+    if (VERIFIED_POC_KEYS.has(company.name) && state.selectedCompany === company) {
+      document.getElementById("dialogSummary").textContent = "確認済み企業データの読み込みに失敗しました。既存の推測データへはフォールバックしません。";
+      els.snapshotGrid.innerHTML = "";
+      els.detailTabs.innerHTML = "";
+      els.detailBody.innerHTML = "";
+      els.dialogSources.innerHTML = "";
+    }
+  }
+}
+
 function sourceClass(sourceType) {
   if (sourceType === "公式") return "official";
   if (sourceType === "IR") return "ir";
@@ -4072,6 +4233,7 @@ function sourceClass(sourceType) {
 }
 
 function renderDetail(company, tab) {
+  if (company.__verifiedProfile) { renderVerifiedDetail(company, tab); return; }
   let section = company.details[tab];
 
   if (!section && tab === "benefits") {
@@ -4116,6 +4278,13 @@ function openCompany(company) {
   });
   state.selectedCompany = company;
   state.detailTab = "compensation";
+  company.__verifiedProfile = null;
+  restoreLegacyDetailTabs();
+  const banner = document.querySelector(".official-data-banner");
+  if (banner) {
+    banner.className = "official-data-banner";
+    banner.textContent = "OFFICIAL DATA ONLY · 採用条件は年度・職種・勤務地で変わるため、数値には対象年度・募集区分を残しています。";
+  }
 
   document.getElementById("dialogIndustry").textContent = company.industry;
   document.getElementById("dialogName").textContent = company.displayName;
@@ -4141,8 +4310,21 @@ function openCompany(company) {
   document.getElementById("saveCompanyBtn").textContent =
     state.saved.has(company.name) ? "保存済み" : "コレクションに保存";
 
-  renderDetail(company, "compensation");
+  if (VERIFIED_POC_KEYS.has(company.name)) {
+    document.getElementById("dialogSummary").textContent = "確認済み公開情報を読み込んでいます…";
+    els.snapshotGrid.innerHTML = "";
+    els.detailTabs.innerHTML = "";
+    els.detailBody.innerHTML = "";
+    els.dialogSources.innerHTML = "";
+    if (banner) {
+      banner.className = "official-data-banner verified-data-banner loading";
+      banner.textContent = "VERIFYING · SupabaseからHIGH confidenceの公開情報だけを取得中";
+    }
+  } else {
+    renderDetail(company, "compensation");
+  }
   els.companyDialog.showModal();
+  loadVerifiedProfile(company);
 }
 
 function saveCurrentCompany() {
