@@ -2227,9 +2227,39 @@ body.mobile-experience .quarry-scroll-cue {
   display: none !important;
 }
 
-.mine-stage {
-  cursor: crosshair !important;
+.mine-stage,
+.grass {
+  cursor: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyB0cmFuc2Zvcm09InJvdGF0ZSgtMzIgMjAgMjApIj48cGF0aCBkPSJNMTYgNSBRMjAgMSAyNCA1IEwyMyA5IEgxNyBaIiBmaWxsPSIjZTUzOTM1IiBzdHJva2U9IiM3ODE5MTUiIHN0cm9rZS13aWR0aD0iMS42Ii8+PHJlY3QgeD0iMTgiIHk9IjciIHdpZHRoPSI0IiBoZWlnaHQ9IjIwIiByeD0iMiIgZmlsbD0iI2U1MzkzNSIgc3Ryb2tlPSIjNzgxOTE1IiBzdHJva2Utd2lkdGg9IjEuNCIvPjxwYXRoIGQ9Ik0xMyAyNSBRMjAgMjEgMjcgMjUgTDI1LjUgMzMgUTIwIDM4IDE0LjUgMzMgWiIgZmlsbD0iI2Q5ZGRlMSIgc3Ryb2tlPSIjNTU1YjYxIiBzdHJva2Utd2lkdGg9IjEuNyIvPjxwYXRoIGQ9Ik0xNS41IDI3IFEyMCAyNC41IDI0LjUgMjciIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y4ZjlmYSIgc3Ryb2tlLXdpZHRoPSIxLjIiIG9wYWNpdHk9Ii44NSIvPjwvZz48L3N2Zz4=") 25 35, pointer !important;
   touch-action: pan-x pan-y !important;
+  user-select: none;
+}
+
+.grass {
+  z-index: 8;
+}
+
+.grass-dug-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.grass-dug-segment {
+  position: absolute;
+  bottom: -8px;
+  min-width: 22px;
+  background: linear-gradient(180deg, #a96d35 0%, #8b542d 58%, #704127 100%);
+  border: 1px solid rgba(77, 45, 24, .34);
+  border-bottom: 0;
+  border-radius: 50% 50% 12% 12% / 72% 72% 12% 12%;
+  box-shadow: inset 0 4px 7px rgba(255,226,176,.14), 0 -2px 0 rgba(72,127,36,.2);
+}
+
+.grass .flower {
+  z-index: 2;
+  pointer-events: none;
 }
 
 .click-dig-pulse {
@@ -2316,7 +2346,8 @@ body.mobile-experience .quarry-scroll-cue {
 
         <div class="mountains m1"></div>
         <div class="mountains m2"></div>
-        <div class="grass">
+        <div class="grass" id="grassSurface" aria-label="表面の草地。クリックまたはタップして掘れます。">
+          <div class="grass-dug-layer" id="grassDugLayer" aria-hidden="true"></div>
           <span class="flower f1">✦</span>
           <span class="flower f2">✦</span>
           <span class="flower f3">✦</span>
@@ -3099,6 +3130,8 @@ const els = {
   zoneLines: document.getElementById("zoneLines"),
   mineStage: document.getElementById("mineStage"),
   mineWrap: document.getElementById("mineWrap"),
+  grassSurface: document.getElementById("grassSurface"),
+  grassDugLayer: document.getElementById("grassDugLayer"),
   oreLayer: document.getElementById("oreLayer"),
   canvas: document.getElementById("digCanvas"),
   hint: document.getElementById("digHint"),
@@ -3276,6 +3309,42 @@ function renderOres() {
   });
 }
 
+function updateGrassExcavation() {
+  if (!els.grassDugLayer || !els.mineStage) return;
+
+  const w = Math.max(1, els.mineStage.getBoundingClientRect().width);
+  const step = w / Math.max(1, SURFACE_BINS - 1);
+  const threshold = 2.5;
+  const runs = [];
+  let start = -1;
+  let maxDepth = 0;
+
+  for (let i = 0; i <= SURFACE_BINS; i++) {
+    const depth = i < SURFACE_BINS ? surfaceProfile[i] : 0;
+    if (depth > threshold) {
+      if (start < 0) { start = i; maxDepth = depth; }
+      else maxDepth = Math.max(maxDepth, depth);
+    } else if (start >= 0) {
+      runs.push({ start, end: i - 1, maxDepth });
+      start = -1;
+      maxDepth = 0;
+    }
+  }
+
+  els.grassDugLayer.innerHTML = "";
+  for (const run of runs) {
+    const seg = document.createElement("span");
+    seg.className = "grass-dug-segment";
+    const left = Math.max(0, run.start * step - 8);
+    const width = Math.min(w - left, Math.max(24, (run.end - run.start + 1) * step + 16));
+    const height = Math.min(60, 15 + run.maxDepth * .48);
+    seg.style.left = `${left}px`;
+    seg.style.width = `${width}px`;
+    seg.style.height = `${height}px`;
+    els.grassDugLayer.appendChild(seg);
+  }
+}
+
 function drawCover() {
   const rect = els.mineStage.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
@@ -3343,6 +3412,7 @@ function drawCover() {
   }
 
   eraseExcavatedSurface();
+  updateGrassExcavation();
 }
 
 function eraseExcavatedSurface() {
@@ -3547,12 +3617,10 @@ function updateSoilPhysics(dt) {
   });
 }
 
-function digAtClientPoint(clientX, clientY) {
+function digAtLocalPoint(localX, localY = 0) {
   const rect = els.mineStage.getBoundingClientRect();
-  if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return;
-
-  const localX = Math.max(0, Math.min(rect.width, clientX - rect.left));
-  const localY = Math.max(0, Math.min(rect.height, clientY - rect.top));
+  localX = Math.max(0, Math.min(rect.width, localX));
+  localY = Math.max(0, Math.min(rect.height, localY));
 
   // Same excavation footprint as the former shovel blade.
   const clickImpact = 18;
@@ -3569,7 +3637,6 @@ function digAtClientPoint(clientX, clientY) {
   spawnSoilClods(localX, newSurface, clickImpact);
   revealCompaniesNear(localX);
 
-  // Immediate visual feedback so a click/tap always feels registered.
   const pulse = document.createElement("span");
   pulse.className = "click-dig-pulse";
   pulse.style.left = `${localX}px`;
@@ -3582,6 +3649,19 @@ function digAtClientPoint(clientX, clientY) {
   if (navigator.vibrate) navigator.vibrate(8);
   updateStatus();
 }
+
+function digAtClientPoint(clientX, clientY) {
+  const rect = els.mineStage.getBoundingClientRect();
+  if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return;
+  digAtLocalPoint(clientX - rect.left, clientY - rect.top);
+}
+
+function digGrassAtClientX(clientX) {
+  const rect = els.mineStage.getBoundingClientRect();
+  if (clientX < rect.left || clientX > rect.right) return;
+  digAtLocalPoint(clientX - rect.left, 0);
+}
+
 
 let digPointerGesture = null;
 
@@ -3609,6 +3689,30 @@ function onDigPointerUp(e) {
   if (moved > 10) return;
 
   digAtClientPoint(e.clientX, e.clientY);
+}
+
+let grassPointerGesture = null;
+
+function onGrassPointerDown(e) {
+  if (e.isPrimary === false) return;
+  if (e.pointerType === "mouse" && e.button !== 0) return;
+  grassPointerGesture = { pointerId: e.pointerId, x: e.clientX, y: e.clientY };
+}
+
+function onGrassPointerUp(e) {
+  const g = grassPointerGesture;
+  if (!g || e.pointerId !== g.pointerId) return;
+  grassPointerGesture = null;
+  const moved = Math.hypot(e.clientX - g.x, e.clientY - g.y);
+  if (moved > 10) return;
+  digGrassAtClientX(e.clientX);
+}
+
+function cancelGrassPointer(e) {
+  if (!grassPointerGesture) return;
+  if (e.pointerId === undefined || e.pointerId === grassPointerGesture.pointerId) {
+    grassPointerGesture = null;
+  }
 }
 
 function cancelDigPointer(e) {
@@ -4016,6 +4120,13 @@ function bindEvents() {
   els.mineStage.addEventListener("pointerdown", onDigPointerDown);
   els.mineStage.addEventListener("pointerup", onDigPointerUp);
   els.mineStage.addEventListener("pointercancel", cancelDigPointer);
+
+  // The green turf is part of the excavation surface too.
+  if (els.grassSurface) {
+    els.grassSurface.addEventListener("pointerdown", onGrassPointerDown);
+    els.grassSurface.addEventListener("pointerup", onGrassPointerUp);
+    els.grassSurface.addEventListener("pointercancel", cancelGrassPointer);
+  }
 
   els.mineStage.addEventListener("pointermove", (e) => {
     const rect = els.mineStage.getBoundingClientRect();
