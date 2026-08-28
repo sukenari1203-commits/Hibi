@@ -2218,7 +2218,7 @@ body.mobile-experience .quarry-scroll-cue {
 }
 
 /* =========================================================
-   Click-to-dig interaction v3
+   Click-to-dig interaction v4 FIXED
    Keeps the existing shovel-sized excavation footprint,
    but removes the shovel UI and digs on click/tap.
    ========================================================= */
@@ -2230,6 +2230,23 @@ body.mobile-experience .quarry-scroll-cue {
 .mine-stage {
   cursor: crosshair !important;
   touch-action: pan-x pan-y !important;
+}
+
+.click-dig-pulse {
+  position: absolute;
+  z-index: 19;
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(244, 196, 75, .95);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: clickDigPulse .34s ease-out forwards;
+}
+
+@keyframes clickDigPulse {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(.35); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
 }
 
 
@@ -3530,15 +3547,14 @@ function updateSoilPhysics(dt) {
   });
 }
 
-function digAtPointer(e) {
-  // Revealed ores handle their own click and stop propagation.
-  if (e.button !== undefined && e.button !== 0) return;
-
+function digAtClientPoint(clientX, clientY) {
   const rect = els.mineStage.getBoundingClientRect();
-  const localX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+  if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return;
 
-  // Use the same carveWithShovel() footprint as the old shovel interaction.
-  // A fixed impact value keeps one click roughly equivalent to one normal shovel strike.
+  const localX = Math.max(0, Math.min(rect.width, clientX - rect.left));
+  const localY = Math.max(0, Math.min(rect.height, clientY - rect.top));
+
+  // Same excavation footprint as the former shovel blade.
   const clickImpact = 18;
 
   state.xp += 4;
@@ -3553,10 +3569,53 @@ function digAtPointer(e) {
   spawnSoilClods(localX, newSurface, clickImpact);
   revealCompaniesNear(localX);
 
+  // Immediate visual feedback so a click/tap always feels registered.
+  const pulse = document.createElement("span");
+  pulse.className = "click-dig-pulse";
+  pulse.style.left = `${localX}px`;
+  pulse.style.top = `${Math.min(localY, newSurface)}px`;
+  els.mineStage.appendChild(pulse);
+  setTimeout(() => pulse.remove(), 420);
+
   state.deepest = Math.max(state.deepest, getDepthFromY(newSurface));
   els.hint.classList.add("hidden");
   if (navigator.vibrate) navigator.vibrate(8);
   updateStatus();
+}
+
+let digPointerGesture = null;
+
+function onDigPointerDown(e) {
+  if (e.isPrimary === false) return;
+  if (e.pointerType === "mouse" && e.button !== 0) return;
+  if (e.target.closest?.(".ore.revealed")) return;
+
+  digPointerGesture = {
+    pointerId: e.pointerId,
+    x: e.clientX,
+    y: e.clientY
+  };
+}
+
+function onDigPointerUp(e) {
+  const g = digPointerGesture;
+  if (!g || e.pointerId !== g.pointerId) return;
+  digPointerGesture = null;
+
+  if (e.target.closest?.(".ore.revealed")) return;
+
+  // A drag is navigation/scrolling; a short stationary gesture is excavation.
+  const moved = Math.hypot(e.clientX - g.x, e.clientY - g.y);
+  if (moved > 10) return;
+
+  digAtClientPoint(e.clientX, e.clientY);
+}
+
+function cancelDigPointer(e) {
+  if (!digPointerGesture) return;
+  if (e.pointerId === undefined || e.pointerId === digPointerGesture.pointerId) {
+    digPointerGesture = null;
+  }
 }
 
 function getShovelTipClient() {
@@ -3952,8 +4011,11 @@ function bindEvents() {
     });
   });
 
-  // Direct excavation: one click/tap = one shovel-sized dig.
-  els.mineStage.addEventListener("click", digAtPointer);
+  // Direct excavation: mouse click / touch tap = one shovel-sized dig.
+  // Pointer-up with a movement threshold keeps horizontal/vertical scrolling usable.
+  els.mineStage.addEventListener("pointerdown", onDigPointerDown);
+  els.mineStage.addEventListener("pointerup", onDigPointerUp);
+  els.mineStage.addEventListener("pointercancel", cancelDigPointer);
 
   els.mineStage.addEventListener("pointermove", (e) => {
     const rect = els.mineStage.getBoundingClientRect();
