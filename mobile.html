@@ -2231,8 +2231,13 @@ body.mobile-experience .quarry-scroll-cue {
 .mine-stage,
 #digCanvas {
   cursor: default !important;
-  touch-action: pan-x pan-y !important;
+  touch-action: pan-y !important;
   user-select: none;
+}
+
+.mine-stage.digging-path,
+.mine-stage.digging-path #digCanvas {
+  cursor: grabbing !important;
 }
 
 .mine-stage.soil-hover,
@@ -2501,7 +2506,7 @@ body.mobile-experience .quarry-scroll-cue {
           <i class="rail-line"></i>
         </aside>
 
-        <div class="mine-stage" id="mineStage" tabindex="0" aria-label="採掘エリア。掘りたい位置をクリックまたはタップして掘ります。">
+      <div class="mine-stage" id="mineStage" tabindex="0" aria-label="採掘エリア。地表から土を押してなぞると、左右や斜めへ掘り進められます。">
           <div class="mine-underlay"></div>
           <div class="zone-lines" id="zoneLines"></div>
           <div class="ore-layer" id="oreLayer"></div>
@@ -2510,8 +2515,8 @@ body.mobile-experience .quarry-scroll-cue {
 
           <div class="dig-hint" id="digHint">
             <span class="dig-icon">↧</span>
-            <strong>クリックして掘る</strong>
-            <small>掘りたい位置をクリック / タップ</small>
+          <strong>押して、なぞって掘る</strong>
+          <small>地表から左右・斜めにドラッグ / タップ</small>
           </div>
 
           <div class="depth-float" id="depthFloat">0 m</div>
@@ -3331,7 +3336,13 @@ let ctx;
 let toastTimer;
 
 const SURFACE_BINS = 220;
-let surfaceProfile = new Array(SURFACE_BINS).fill(0);
+const EXCAVATION_STORAGE_KEY = "vi-major-excavation-v3";
+const EXCAVATION_INDEX_CELL = 72;
+const MAX_EXCAVATION_STROKES = 6000;
+let surfaceProfile = new Array(SURFACE_BINS).fill(0); // Legacy v2 progress.
+let excavationStrokes = [];
+let excavationIndex = new Map();
+let nextExcavationSeed = 1;
 let clods = [];
 let lastPhysicsTime = performance.now();
 
@@ -3363,18 +3374,51 @@ function persist() {
   const h = Math.max(1, els.mineStage.clientHeight);
   const normalized = surfaceProfile.map(v => Math.max(0, Math.min(1, v / h)));
   localStorage.setItem("vi-major-surface-v2", JSON.stringify(normalized));
+
+  try {
+    const compact = excavationStrokes.map(stroke => [
+      Number(stroke.x.toFixed(5)),
+      Number(stroke.y.toFixed(5)),
+      Number(stroke.r.toFixed(5)),
+      stroke.seed
+    ]);
+    localStorage.setItem(EXCAVATION_STORAGE_KEY, JSON.stringify(compact));
+  } catch (error) {
+    console.warn("Could not persist excavation mask:", error);
+  }
 }
 
-function loadSurfaceProfile() {
+function loadExcavationState() {
   try {
     const saved = JSON.parse(localStorage.getItem("vi-major-surface-v2") || "null");
     if (Array.isArray(saved) && saved.length === SURFACE_BINS) {
       const h = Math.max(1, els.mineStage.clientHeight);
       surfaceProfile = saved.map(v => Math.max(0, Math.min(h - 10, Number(v || 0) * h)));
-      return;
+    } else {
+      surfaceProfile = new Array(SURFACE_BINS).fill(0);
     }
-  } catch (_) {}
-  surfaceProfile = new Array(SURFACE_BINS).fill(0);
+  } catch (_) {
+    surfaceProfile = new Array(SURFACE_BINS).fill(0);
+  }
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(EXCAVATION_STORAGE_KEY) || "[]");
+    excavationStrokes = Array.isArray(saved)
+      ? saved
+          .filter(row => Array.isArray(row) && row.length >= 4)
+          .map(row => ({
+            x: Math.max(0, Math.min(1, Number(row[0]) || 0)),
+            y: Math.max(0, Math.min(1, Number(row[1]) || 0)),
+            r: Math.max(.001, Math.min(.2, Number(row[2]) || .01)),
+            seed: Math.max(1, Math.round(Number(row[3]) || 1))
+          }))
+      : [];
+  } catch (_) {
+    excavationStrokes = [];
+  }
+
+  nextExcavationSeed = excavationStrokes.reduce((max, stroke) => Math.max(max, stroke.seed), 0) + 1;
+  rebuildExcavationIndex();
 }
 
 function initials(name) {
@@ -3583,11 +3627,15 @@ function drawCover() {
 
 function eraseExcavatedSurface() {
   if (!ctx) return;
-  const w = els.mineStage.getBoundingClientRect().width;
+  const { w, h } = getStageMetrics();
   const step = w / (SURFACE_BINS - 1);
+
+  rebuildExcavationIndex();
 
   ctx.save();
   ctx.globalCompositeOperation = "destination-out";
+
+  // Keep excavation made with the previous one-dimensional engine.
   ctx.beginPath();
   ctx.moveTo(0, 0);
   ctx.lineTo(w, 0);
@@ -3601,7 +3649,182 @@ function eraseExcavatedSurface() {
   ctx.closePath();
   ctx.fillStyle = "#000";
   ctx.fill();
+
+  excavationStrokes.forEach(stroke => eraseOrganicStroke(stroke, w, h));
   ctx.restore();
+}
+
+function getStageMetrics() {
+  return {
+    w: Math.max(1, els.mineStage.getBoundingClientRect().width),
+    h: Math.max(1, els.mineStage.clientHeight)
+  };
+}
+
+function excavationNoise(seed, offset) {
+  const value = Math.sin((seed + offset * 97.17) * 12.9898) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+function strokePixels(stroke, w, h) {
+  return {
+    x: stroke.x * w,
+    y: stroke.y * h,
+    r: stroke.r * Math.min(w, h),
+    seed: stroke.seed
+  };
+}
+
+function excavationIndexKey(column, row) {
+  return `${column}:${row}`;
+}
+
+function addStrokeToExcavationIndex(stroke) {
+  const { w, h } = getStageMetrics();
+  const px = strokePixels(stroke, w, h);
+  const reach = px.r * 1.16;
+  const minColumn = Math.floor((px.x - reach) / EXCAVATION_INDEX_CELL);
+  const maxColumn = Math.floor((px.x + reach) / EXCAVATION_INDEX_CELL);
+  const minRow = Math.floor((px.y - reach) / EXCAVATION_INDEX_CELL);
+  const maxRow = Math.floor((px.y + reach) / EXCAVATION_INDEX_CELL);
+
+  for (let column = minColumn; column <= maxColumn; column++) {
+    for (let row = minRow; row <= maxRow; row++) {
+      const key = excavationIndexKey(column, row);
+      if (!excavationIndex.has(key)) excavationIndex.set(key, []);
+      excavationIndex.get(key).push(stroke);
+    }
+  }
+}
+
+function rebuildExcavationIndex() {
+  excavationIndex = new Map();
+  excavationStrokes.forEach(addStrokeToExcavationIndex);
+}
+
+function legacySurfaceDepthAtX(x) {
+  const { w } = getStageMetrics();
+  const pos = Math.max(0, Math.min(SURFACE_BINS - 1, (x / w) * (SURFACE_BINS - 1)));
+  const i0 = Math.floor(pos);
+  const i1 = Math.min(SURFACE_BINS - 1, i0 + 1);
+  const t = pos - i0;
+  return surfaceProfile[i0] * (1 - t) + surfaceProfile[i1] * t;
+}
+
+function isPointExcavated(localX, localY) {
+  const { w, h } = getStageMetrics();
+  if (localY < 0 || localX < 0 || localX > w) return true;
+  if (localY > h) return false;
+  if (localY < legacySurfaceDepthAtX(localX)) return true;
+
+  const column = Math.floor(localX / EXCAVATION_INDEX_CELL);
+  const row = Math.floor(localY / EXCAVATION_INDEX_CELL);
+  const candidates = excavationIndex.get(excavationIndexKey(column, row)) || [];
+
+  for (let i = candidates.length - 1; i >= 0; i--) {
+    const px = strokePixels(candidates[i], w, h);
+    const dx = localX - px.x;
+    const dy = localY - px.y;
+    if (dx * dx + dy * dy <= Math.pow(px.r * 1.05, 2)) return true;
+  }
+  return false;
+}
+
+function excavationFrontierAt(localX, localY, radius) {
+  let hasAir = isPointExcavated(localX, localY);
+  let hasSoil = !hasAir;
+  const sampleRadius = radius * .76;
+
+  for (let i = 0; i < 12; i++) {
+    const angle = (i / 12) * Math.PI * 2;
+    const excavated = isPointExcavated(
+      localX + Math.cos(angle) * sampleRadius,
+      localY + Math.sin(angle) * sampleRadius
+    );
+    hasAir ||= excavated;
+    hasSoil ||= !excavated;
+  }
+
+  return hasAir && hasSoil;
+}
+
+function brushRadiusForTool(tool = currentTool()) {
+  if (tool.id === "drill") return 38;
+  if (tool.id === "shovel") return 28;
+  return 20;
+}
+
+function eraseOrganicStroke(stroke, w, h) {
+  if (!ctx) return;
+  const px = strokePixels(stroke, w, h);
+
+  ctx.beginPath();
+  ctx.arc(px.x, px.y, px.r * .84, 0, Math.PI * 2);
+
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2 + excavationNoise(px.seed, i) * .42;
+    const distance = px.r * (.54 + excavationNoise(px.seed, i + 20) * .16);
+    const lobeRadius = px.r * (.25 + excavationNoise(px.seed, i + 40) * .17);
+    ctx.moveTo(px.x + Math.cos(angle) * distance + lobeRadius, px.y + Math.sin(angle) * distance);
+    ctx.arc(
+      px.x + Math.cos(angle) * distance,
+      px.y + Math.sin(angle) * distance,
+      lobeRadius,
+      0,
+      Math.PI * 2
+    );
+  }
+
+  ctx.fillStyle = "#000";
+  ctx.fill();
+}
+
+function compactExcavationStrokes() {
+  if (excavationStrokes.length <= MAX_EXCAVATION_STROKES) return false;
+  const recentStart = excavationStrokes.length - 1200;
+  excavationStrokes = excavationStrokes.filter((_, index) => index >= recentStart || index % 2 === 0);
+  rebuildExcavationIndex();
+  return true;
+}
+
+function stampOrganicExcavation(localX, localY, radius) {
+  const { w, h } = getStageMetrics();
+  const stroke = {
+    x: Math.max(0, Math.min(1, localX / w)),
+    y: Math.max(0, Math.min(1, localY / h)),
+    r: Math.max(.001, Math.min(.2, radius / Math.min(w, h))),
+    seed: nextExcavationSeed++
+  };
+
+  excavationStrokes.push(stroke);
+  addStrokeToExcavationIndex(stroke);
+
+  if (ctx) {
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    eraseOrganicStroke(stroke, w, h);
+    ctx.restore();
+  }
+
+  if (compactExcavationStrokes()) drawCover();
+  return stroke;
+}
+
+function carveOrganicPath(fromX, fromY, toX, toY, radius) {
+  const distance = Math.hypot(toX - fromX, toY - fromY);
+  const spacing = Math.max(5, radius * .34);
+  const steps = Math.max(1, Math.ceil(distance / spacing));
+  const carved = [];
+
+  for (let step = 0; step <= steps; step++) {
+    const progress = steps ? step / steps : 1;
+    const x = fromX + (toX - fromX) * progress;
+    const y = fromY + (toY - fromY) * progress;
+    if (!excavationFrontierAt(x, y, radius)) continue;
+    carved.push(stampOrganicExcavation(x, y, radius));
+  }
+
+  return carved;
 }
 
 function getCompanyPoint(company) {
@@ -3615,55 +3838,19 @@ function getCompanyPoint(company) {
 }
 
 function surfaceDepthAtX(x) {
-  const w = Math.max(1, els.mineStage.getBoundingClientRect().width);
-  const pos = Math.max(0, Math.min(SURFACE_BINS - 1, (x / w) * (SURFACE_BINS - 1)));
-  const i0 = Math.floor(pos);
-  const i1 = Math.min(SURFACE_BINS - 1, i0 + 1);
-  const t = pos - i0;
-  return surfaceProfile[i0] * (1 - t) + surfaceProfile[i1] * t;
+  const { h } = getStageMetrics();
+  for (let y = 0; y <= h; y += 4) {
+    if (!isPointExcavated(x, y)) return y;
+  }
+  return h;
 }
 
 function carveWithShovel(localX, downwardSpeed) {
-  const w = els.mineStage.getBoundingClientRect().width;
-  const h = els.mineStage.clientHeight;
-  const center = Math.round((localX / w) * (SURFACE_BINS - 1));
-
-  // Small blade footprint: roughly 26–38px on desktop.
-  const bladeHalfPx = 14 + Math.min(5, state.level * 1.3);
-  const halfBins = Math.max(2, Math.round((bladeHalfPx / w) * (SURFACE_BINS - 1)));
-  const depthGain = Math.min(29, 10 + Math.max(0, downwardSpeed) * .18 + state.level * 1.2);
-
-  for (let i = center - halfBins; i <= center + halfBins; i++) {
-    if (i < 0 || i >= SURFACE_BINS) continue;
-    const d = Math.abs(i - center) / Math.max(1, halfBins);
-    const shovelShape = Math.pow(Math.max(0, 1 - d), .72);
-    const jagged = .82 + Math.random() * .34;
-    surfaceProfile[i] = Math.min(h - 14, surfaceProfile[i] + depthGain * shovelShape * jagged);
-  }
-
-  // Give the cut a little real-earth asymmetry rather than a perfect geometric bowl.
-  const nudge = Math.random() < .5 ? -1 : 1;
-  const edge = center + nudge * halfBins;
-  if (edge >= 0 && edge < SURFACE_BINS) {
-    surfaceProfile[edge] = Math.max(0, surfaceProfile[edge] - 2 - Math.random() * 5);
-  }
-
-  drawCover();
-  persist();
-
-  const excavationPx = surfaceDepthAtX(localX);
-  analyticsTrack("dig", {
-    industry: getIndustryFromX(localX),
-    x_position: localX / Math.max(1, w),
-    depth_m: getDepthFromY(excavationPx),
-    metadata: {
-      dig_power_level: state.level,
-      downward_speed: Number(Math.max(0, downwardSpeed).toFixed(2))
-    }
-  });
+  const localY = surfaceDepthAtX(localX);
+  digAtLocalPoint(localX, localY, localX, Math.max(0, localY - 4), true, downwardSpeed);
 }
 
-function revealCompaniesNear(localX) {
+function revealCompaniesNear(localX, localY, brushRadius) {
   let found = null;
 
   companies.forEach(company => {
@@ -3673,8 +3860,9 @@ function revealCompaniesNear(localX) {
     const industry = getIndustryFromX(localX);
     if (company.industry !== industry) return;
 
-    const excavation = surfaceDepthAtX(p.x);
-    if (Math.abs(p.x - localX) <= 34 && excavation >= p.y - 22) {
+    const uncovered = isPointExcavated(p.x, p.y);
+    const closeToBrush = Math.hypot(p.x - localX, p.y - localY) <= brushRadius + 34;
+    if (uncovered && closeToBrush) {
       state.discovered.add(company.name);
       recordInterest(company.industry,"discover");
       const ore = [...document.querySelectorAll(".ore")].find(el => el.dataset.name === company.name);
@@ -3760,7 +3948,13 @@ function updateSoilPhysics(dt) {
       p.x = Math.max(1, Math.min(w - 1, p.x));
     }
 
-    const ground = surfaceDepthAtX(p.x);
+    let ground = h + 30;
+    for (let y = Math.max(0, p.y); y <= h; y += 4) {
+      if (!isPointExcavated(p.x, y)) {
+        ground = y;
+        break;
+      }
+    }
     if (p.vy > 0 && p.y >= ground - 2) {
       p.y = ground - 2;
       p.vy *= -.27;
@@ -3783,33 +3977,66 @@ function updateSoilPhysics(dt) {
   });
 }
 
-function digAtLocalPoint(localX, localY = 0) {
+function digAtLocalPoint(
+  localX,
+  localY = 0,
+  fromX = localX,
+  fromY = localY,
+  reward = true,
+  impactOverride = null
+) {
   const rect = els.mineStage.getBoundingClientRect();
   localX = Math.max(0, Math.min(rect.width, localX));
   localY = Math.max(0, Math.min(rect.height, localY));
+  fromX = Math.max(0, Math.min(rect.width, fromX));
+  fromY = Math.max(0, Math.min(rect.height, fromY));
 
-  // Tool power grows at Lv.50 / Lv.100.
   const tool = currentTool();
-  const clickImpact = tool.impact;
-  gainDigXp();
-  recordInterest(getIndustryFromX(localX), "dig");
+  const impact = impactOverride ?? tool.impact;
+  const brushRadius = brushRadiusForTool(tool) + Math.min(8, Math.max(0, impact - tool.impact) * .08);
+  const carved = carveOrganicPath(fromX, fromY, localX, localY, brushRadius);
+  if (!carved.length) return false;
 
-  carveWithShovel(localX, clickImpact);
-  const newSurface = surfaceDepthAtX(localX);
-  spawnSoilClods(localX, newSurface, clickImpact);
-  revealCompaniesNear(localX);
+  if (reward) {
+    gainDigXp();
+    recordInterest(getIndustryFromX(localX), "dig");
+    spawnSoilClods(localX, localY, impact);
+    revealCompaniesNear(localX, localY, brushRadius);
 
-  const pulse = document.createElement("span");
-  pulse.className = "click-dig-pulse";
-  pulse.style.left = `${localX}px`;
-  pulse.style.top = `${Math.min(localY, newSurface)}px`;
-  els.mineStage.appendChild(pulse);
-  setTimeout(() => pulse.remove(), 420);
+    analyticsTrack("dig", {
+      industry: getIndustryFromX(localX),
+      x_position: localX / Math.max(1, rect.width),
+      depth_m: getDepthFromY(Math.min(rect.height, localY + brushRadius)),
+      metadata: {
+        dig_power_level: state.level,
+        brush_radius: Number(brushRadius.toFixed(1)),
+        path_dx: Number((localX - fromX).toFixed(1)),
+        path_dy: Number((localY - fromY).toFixed(1))
+      }
+    });
+  }
 
-  state.deepest = Math.max(state.deepest, getDepthFromY(newSurface));
+  if (reward) {
+    const pulse = document.createElement("span");
+    pulse.className = "click-dig-pulse";
+    pulse.style.left = `${localX}px`;
+    pulse.style.top = `${localY}px`;
+    els.mineStage.appendChild(pulse);
+    setTimeout(() => pulse.remove(), 420);
+  }
+
+  const deepestPixel = carved.reduce((max, stroke) => {
+    const px = strokePixels(stroke, rect.width, rect.height);
+    return Math.max(max, px.y + px.r);
+  }, localY + brushRadius);
+  state.deepest = Math.max(state.deepest, getDepthFromY(Math.min(rect.height, deepestPixel)));
   els.hint.classList.add("hidden");
-  if (navigator.vibrate) navigator.vibrate(8);
-  updateStatus();
+  if (reward) {
+    persist();
+    if (navigator.vibrate) navigator.vibrate(8);
+    updateStatus();
+  }
+  return true;
 }
 
 function pointOverSoil(clientX, clientY) {
@@ -3818,18 +4045,18 @@ function pointOverSoil(clientX, clientY) {
 
   const localX = clientX - rect.left;
   const localY = clientY - rect.top;
-  const soilTop = surfaceDepthAtX(localX);
-
-  // The canvas soil begins at the current excavation surface and continues downward.
-  // Above this line is transparent, already-dug space.
-  return localY >= soilTop;
+  return !isPointExcavated(localX, localY);
 }
 
-function digAtClientPoint(clientX, clientY) {
+function digAtClientPoint(clientX, clientY, fromClientX = clientX, fromClientY = clientY, reward = true) {
   const rect = els.mineStage.getBoundingClientRect();
-  if (!pointOverSoil(clientX, clientY)) return false;
-  digAtLocalPoint(clientX - rect.left, clientY - rect.top);
-  return true;
+  return digAtLocalPoint(
+    clientX - rect.left,
+    clientY - rect.top,
+    fromClientX - rect.left,
+    fromClientY - rect.top,
+    reward
+  );
 }
 
 function updateSoilCursor(clientX, clientY, target = null) {
@@ -3847,28 +4074,47 @@ function onDigPointerDown(e) {
   if (e.pointerType === "mouse" && e.button !== 0) return;
   if (e.target.closest?.(".ore.revealed")) return;
 
-  // Only arm the click if the cursor is currently sitting on brown soil.
-  if (!pointOverSoil(e.clientX, e.clientY)) return;
+  const rect = els.mineStage.getBoundingClientRect();
+  const localX = e.clientX - rect.left;
+  const localY = e.clientY - rect.top;
+  const radius = brushRadiusForTool();
+  if (!pointOverSoil(e.clientX, e.clientY) || !excavationFrontierAt(localX, localY, radius)) {
+    if (pointOverSoil(e.clientX, e.clientY)) showToast("地表か、掘った穴の縁から掘り進めてください");
+    return;
+  }
 
   digPointerGesture = {
     pointerId: e.pointerId,
-    x: e.clientX,
-    y: e.clientY
+    lastX: e.clientX,
+    lastY: e.clientY,
+    lastRewardAt: performance.now()
   };
+  els.mineStage.classList.add("digging-path");
+  els.mineStage.setPointerCapture?.(e.pointerId);
+  digAtClientPoint(e.clientX, e.clientY);
+}
+
+function onDigPointerMove(e) {
+  const g = digPointerGesture;
+  if (!g || e.pointerId !== g.pointerId) return;
+  const distance = Math.hypot(e.clientX - g.lastX, e.clientY - g.lastY);
+  if (distance < 3) return;
+
+  const now = performance.now();
+  const reward = now - g.lastRewardAt >= 120;
+  const carved = digAtClientPoint(e.clientX, e.clientY, g.lastX, g.lastY, reward);
+  g.lastX = e.clientX;
+  g.lastY = e.clientY;
+  if (reward && carved) g.lastRewardAt = now;
 }
 
 function onDigPointerUp(e) {
   const g = digPointerGesture;
   if (!g || e.pointerId !== g.pointerId) return;
   digPointerGesture = null;
-
-  if (e.target.closest?.(".ore.revealed")) return;
-
-  const moved = Math.hypot(e.clientX - g.x, e.clientY - g.y);
-  if (moved > 10) return;
-
-  // Re-check at release: clicking empty excavated space does nothing.
-  digAtClientPoint(e.clientX, e.clientY);
+  els.mineStage.classList.remove("digging-path");
+  if (els.mineStage.hasPointerCapture?.(e.pointerId)) els.mineStage.releasePointerCapture(e.pointerId);
+  persist();
   if (e.pointerType !== "touch") updateSoilCursor(e.clientX, e.clientY, e.target);
 }
 
@@ -3876,6 +4122,8 @@ function cancelDigPointer(e) {
   if (!digPointerGesture) return;
   if (e.pointerId === undefined || e.pointerId === digPointerGesture.pointerId) {
     digPointerGesture = null;
+    els.mineStage.classList.remove("digging-path");
+    persist();
   }
 }
 
@@ -4017,7 +4265,7 @@ state.xp += 4;
     const newSurface = surfaceDepthAtX(localX);
 
     spawnSoilClods(localX, newSurface, downwardSpeed);
-    revealCompaniesNear(localX);
+    revealCompaniesNear(localX, newSurface, brushRadiusForTool());
 
     state.deepest = Math.max(state.deepest, getDepthFromY(newSurface));
     shovelPhysics.digArmed = false;
@@ -4421,6 +4669,7 @@ function resetDemo() {
   localStorage.removeItem("vi-major-saved-v2");
   localStorage.removeItem("vi-major-deepest-v2");
   localStorage.removeItem("vi-major-surface-v2");
+  localStorage.removeItem(EXCAVATION_STORAGE_KEY);
   localStorage.removeItem("vi-dig-level-v2");
   localStorage.removeItem("vi-dig-xp-v2");
   localStorage.removeItem("vi-interest-signals-v1");
@@ -4451,9 +4700,9 @@ function bindEvents() {
     });
   });
 
-  // Direct excavation: mouse click / touch tap = one shovel-sized dig.
-  // Pointer-up with a movement threshold keeps horizontal/vertical scrolling usable.
+  // Organic 2D excavation: press at an exposed edge, then drag sideways or diagonally.
   els.mineStage.addEventListener("pointerdown", onDigPointerDown);
+  els.mineStage.addEventListener("pointermove", onDigPointerMove);
   els.mineStage.addEventListener("pointerup", onDigPointerUp);
   els.mineStage.addEventListener("pointercancel", cancelDigPointer);
   els.mineStage.addEventListener("pointerleave", () => els.mineStage.classList.remove("soil-hover"));
@@ -4585,7 +4834,7 @@ document.getElementById("resetBtn").addEventListener("click", resetDemo);
 
   window.addEventListener("resize", () => {
     persist();
-    loadSurfaceProfile();
+    loadExcavationState();
     renderOres();
     drawCover();
 
@@ -4605,7 +4854,7 @@ function init() {
   }
   buildIndustryRuler();
   setupQuarryHorizontalScroll();
-  loadSurfaceProfile();
+  loadExcavationState();
   renderOres();
   drawCover();
   persistCompanyCatalog();
@@ -4622,7 +4871,7 @@ function init() {
       viewport_height: window.innerHeight
     }
   });
-  // Shovel UI removed in click-to-dig mode; no shovel physics loop is needed.
+  requestAnimationFrame(physicsFrame);
 }
 
 init();
