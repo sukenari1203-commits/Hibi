@@ -2704,7 +2704,7 @@ body.mobile-experience .quarry-scroll-cue {
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="company-data-client.js?v=20260828-all204"></script>
+  <script src="company-data-client.js?v=20260903-restore"></script>
   <script>
 
 /* ===== VENTURE INFO anonymous analytics ===== */
@@ -4444,8 +4444,29 @@ function applyVerifiedProfile(company, profile) {
   renderVerifiedDetail(company, groups[0].key);
 }
 
+function renderVerifiedUnavailable(company, summary, message) {
+  if (state.selectedCompany !== company) return;
+  document.getElementById("dialogSummary").textContent = summary;
+  els.snapshotGrid.innerHTML = "";
+  els.detailTabs.innerHTML = "";
+  els.detailBody.innerHTML = `<div class="verified-empty-tech">${viEsc(message)}</div>`;
+  els.dialogSources.innerHTML = "";
+  const banner = document.querySelector(".official-data-banner");
+  if (banner) {
+    banner.className = "official-data-banner verified-data-banner";
+    banner.textContent = "VERIFIED PUBLIC DATA · 表示できるのは出典確認済みの項目のみです";
+  }
+}
+
 async function loadVerifiedProfile(company) {
-  if (!window.VICompanyData) return;
+  if (!window.VICompanyData) {
+    renderVerifiedUnavailable(
+      company,
+      "企業情報の読み込み機能を初期化できませんでした。",
+      "ページを再読み込みしてください。復旧しない場合は、時間をおいて再度お試しください。"
+    );
+    return;
+  }
   try {
     let profile = verifiedProfileCache.get(company.name);
     if (profile === undefined) {
@@ -4456,20 +4477,20 @@ async function loadVerifiedProfile(company) {
     if (profile && profile.data_points?.length) {
       applyVerifiedProfile(company, profile);
     } else if (VERIFIED_ALL_COMPANIES) {
-      document.getElementById("dialogSummary").textContent = "確認済み公開情報は現在登録されている項目だけを表示します。";
-      els.snapshotGrid.innerHTML = "";
-      els.detailTabs.innerHTML = "";
-      els.detailBody.innerHTML = "";
-      els.dialogSources.innerHTML = "";
+      renderVerifiedUnavailable(
+        company,
+        "この企業の確認済み公開情報は、現在準備中です。",
+        "出典と確度を確認できた項目から順次公開します。"
+      );
     }
   } catch (err) {
     console.warn("Verified company profile load failed", err);
     if (VERIFIED_ALL_COMPANIES && state.selectedCompany === company) {
-      document.getElementById("dialogSummary").textContent = "確認済み企業データの読み込みに失敗しました。既存の推測データへはフォールバックしません。";
-      els.snapshotGrid.innerHTML = "";
-      els.detailTabs.innerHTML = "";
-      els.detailBody.innerHTML = "";
-      els.dialogSources.innerHTML = "";
+      renderVerifiedUnavailable(
+        company,
+        "確認済み企業データの読み込みに失敗しました。",
+        "推測データには切り替えません。通信状態を確認して再度開いてください。"
+      );
     }
   }
 }
@@ -4562,7 +4583,7 @@ function openCompany(company) {
     document.getElementById("dialogSummary").textContent = "確認済み公開情報を読み込んでいます…";
     els.snapshotGrid.innerHTML = "";
     els.detailTabs.innerHTML = "";
-    els.detailBody.innerHTML = "";
+    els.detailBody.innerHTML = `<div class="verified-empty-tech">Supabaseから出典確認済みの企業情報を取得しています…</div>`;
     els.dialogSources.innerHTML = "";
     if (banner) {
       banner.className = "official-data-banner verified-data-banner loading";
