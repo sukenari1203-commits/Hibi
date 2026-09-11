@@ -1,42 +1,4 @@
-<!doctype html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>War Simulator</title>
-<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#10171a}iframe{display:block;width:100%;height:100%;border:0}</style>
-</head>
-<body>
-<iframe id="gameFrame" title="War Simulator"></iframe>
-<script>
-(async()=>{
-  const frame=document.getElementById('gameFrame');
-  try{
-    const response=await fetch('./game.html?v=pc-recommended');
-    if(!response.ok) throw new Error('game.html load failed');
-    let html=await response.text();
-    html=html.replace(
-      '#pcGate{position:fixed;inset:0;z-index:20;background:#0d1316;color:#eee;display:none;place-items:center;text-align:center;padding:28px}#pcGate.active{display:grid}#pcGate strong{display:block;font-size:24px;margin-bottom:8px}#pcGate span{font-size:13px;opacity:.62}',
-      '#pcGate{position:fixed;z-index:20;left:50%;top:14px;transform:translate(-50%,-18px);background:rgba(8,13,16,.88);color:#eee;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:9px 14px;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;backdrop-filter:blur(10px);box-shadow:0 10px 28px rgba(0,0,0,.28)}#pcGate.active{display:block;opacity:1;transform:translate(-50%,0)}#pcGate strong{display:block;font-size:13px;margin-bottom:2px}#pcGate span{font-size:10px;opacity:.65;white-space:nowrap}'
-    );
-    html=html.replace(
-      '<div id="pcGate"><div><strong>PC専用</strong><span>マウスとキーボードでプレイしてください。</span></div></div>',
-      '<div id="pcGate"><div><strong>PC推奨</strong><span>マウスとキーボードでのプレイを推奨します。</span></div></div>'
-    );
-    html=html.replace(
-      "const isPC=matchMedia('(pointer:fine)').matches&&innerWidth>=900;\nif(!isPC){document.getElementById('pcGate').classList.add('active');}\nelse init();",
-      "const isPC=matchMedia('(pointer:fine)').matches&&innerWidth>=900;\ninit();\nif(!isPC){const pcGate=document.getElementById('pcGate');pcGate.classList.add('active');setTimeout(()=>pcGate.classList.remove('active'),4200);}"
-    );
-    html=html.replace(
-      "addEventListener('resize',()=>{if(innerWidth<900){document.getElementById('pcGate').classList.add('active');return}camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});",
-      "addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});"
-    );
-    frame.srcdoc=html;
-  }catch(error){
-    document.body.innerHTML='<div style="color:#eee;font:14px system-ui;padding:24px">ゲームの読み込みに失敗しました。</div>';
-    console.error(error);
-  }
-})();
-</script>
-</body>
-</html>
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f171a"><title>War Simulator</title><link rel="stylesheet" href="style.css"></head><body>
+<div id="pcHint"><strong>PC推奨</strong><span>マウスとキーボードでのプレイを推奨</span></div><div id="game"></div>
+<div class="hud"><div class="supply panel"><div class="row"><span>補給</span><span id="supplyText">0 / 500</span></div><div class="bar"><div id="supplyFill"></div></div></div><div id="selection" class="selection panel"><strong id="selectionTitle"></strong><span id="selectionMeta"></span><div id="selectionState"></div></div><div id="toast" class="toast panel"></div><div id="crosshair" class="crosshair"></div><div class="controls panel">WASD 移動 / Shift 高速 / 右ドラッグ 視点 / ホイール ズーム<br>左クリック 移動 / ダブルクリック 一斉射撃</div><div class="bottom"><button id="deployBtn" disabled>歩兵中隊　100</button></div></div>
+<script type="module" src="app.js"></script></body></html>
