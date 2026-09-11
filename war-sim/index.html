@@ -3,230 +3,255 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0d1720" />
-  <title>OVERLORD // Tactical Command</title>
+  <meta name="theme-color" content="#0b1319" />
+  <title>War Simulator</title>
   <style>
-    :root { color-scheme: dark; --panel: rgba(10,18,24,.88); --line: rgba(255,255,255,.14); --accent:#e9d7a5; --green:#9ab58f; --red:#c56a5d; }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#071018; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    #game { position:fixed; inset:0; }
-    canvas { display:block; width:100%; height:100%; touch-action:none; }
-    .hud { position:fixed; inset:0; pointer-events:none; color:#f5f2e9; }
-    .topbar { position:absolute; top:max(10px, env(safe-area-inset-top)); left:10px; right:10px; display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
-    .panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; backdrop-filter: blur(10px); box-shadow:0 12px 30px rgba(0,0,0,.26); }
-    .mission { padding:10px 12px; max-width:min(68vw,420px); }
-    .eyebrow { font-size:10px; letter-spacing:.2em; opacity:.64; font-weight:800; }
-    .mission h1 { margin:3px 0 2px; font-size:16px; letter-spacing:.03em; }
-    .mission p { margin:0; font-size:11px; opacity:.72; line-height:1.35; }
-    .supply { width:min(42vw,260px); padding:10px 12px; }
-    .supply-row { display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:12px; font-weight:800; }
-    .bar { margin-top:7px; height:8px; overflow:hidden; border-radius:999px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.08); }
-    .bar > div { height:100%; width:0%; background:linear-gradient(90deg,#c9b87e,#efe1ac); transition:width .12s linear; }
-    .selection { position:absolute; top:92px; left:10px; width:min(48vw,270px); padding:9px 11px; font-size:11px; display:none; }
-    .selection.active { display:block; }
-    .selection strong { display:block; font-size:12px; margin-bottom:2px; }
-    .bottom { position:absolute; left:10px; right:10px; bottom:max(10px, env(safe-area-inset-bottom)); display:flex; justify-content:center; }
-    .dock { pointer-events:auto; width:min(760px,100%); padding:10px; display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; }
-    .unit-card { min-width:0; }
-    .unit-card .name { font-weight:900; font-size:13px; letter-spacing:.02em; }
-    .unit-card .meta { font-size:10px; opacity:.62; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    button { pointer-events:auto; border:none; border-radius:12px; padding:12px 15px; min-width:126px; color:#071018; background:var(--accent); font-weight:900; font-size:12px; box-shadow:inset 0 -2px rgba(0,0,0,.12); }
-    button:disabled { filter:grayscale(.7); opacity:.38; }
-    .hint { position:absolute; right:10px; bottom:92px; padding:8px 10px; font-size:10px; line-height:1.4; opacity:.82; max-width:190px; }
-    .toast { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); padding:10px 14px; font-size:12px; font-weight:800; opacity:0; transition:opacity .2s; }
-    .toast.show { opacity:1; }
-    @media (max-width:620px){
-      .mission p{display:none}.mission{max-width:54vw}.mission h1{font-size:14px}.supply{width:42vw}.selection{top:76px;width:58vw}.dock{grid-template-columns:1fr auto}.hint{display:none}
-    }
+    :root{color-scheme:dark;--panel:rgba(9,16,21,.78);--line:rgba(255,255,255,.13);--accent:#ead89d}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#78909a;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+    #game{position:fixed;inset:0}
+    canvas{display:block;width:100%;height:100%;touch-action:none}
+    .hud{position:fixed;inset:0;pointer-events:none;color:#fff}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(8px);box-shadow:0 8px 22px rgba(0,0,0,.2)}
+    .supply{position:absolute;top:max(10px,env(safe-area-inset-top));right:10px;width:155px;padding:9px 10px}
+    .supply-row{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:11px;font-weight:800}
+    .bar{height:6px;margin-top:6px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
+    .bar>div{height:100%;width:0;background:var(--accent)}
+    .selection{position:absolute;top:max(10px,env(safe-area-inset-top));left:10px;padding:8px 10px;font-size:11px;display:none;max-width:220px}
+    .selection.active{display:block}
+    .selection strong{display:block;font-size:12px;margin-bottom:2px}
+    .bottom{position:absolute;left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));display:flex;justify-content:center}
+    button{pointer-events:auto;border:0;border-radius:12px;padding:13px 18px;min-width:180px;color:#0d1418;background:var(--accent);font-weight:900;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.22)}
+    button:disabled{opacity:.4;filter:grayscale(.5)}
+    .toast{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);padding:8px 12px;font-size:11px;font-weight:800;opacity:0;transition:opacity .18s;white-space:nowrap}
+    .toast.show{opacity:1}
   </style>
 </head>
 <body>
   <div id="game"></div>
   <div class="hud">
-    <div class="topbar">
-      <div class="mission panel">
-        <div class="eyebrow">OPERATION OVERLORD // 06 JUN 1944</div>
-        <h1>OMAHA SECTOR — TACTICAL COMMAND</h1>
-        <p>洋上の艦隊から歩兵中隊を投入し、海岸堡を確立せよ。</p>
-      </div>
-      <div class="supply panel">
-        <div class="supply-row"><span>補給物資</span><span id="supplyText">0 / 500</span></div>
-        <div class="bar"><div id="supplyFill"></div></div>
-      </div>
+    <div class="supply panel">
+      <div class="supply-row"><span>補給</span><span id="supplyText">0 / 500</span></div>
+      <div class="bar"><div id="supplyFill"></div></div>
     </div>
-
     <div id="selection" class="selection panel">
-      <strong id="selectionTitle">Rifle Company</strong>
-      <span id="selectionMeta">193名</span>
+      <strong id="selectionTitle"></strong>
+      <span id="selectionMeta"></span>
     </div>
-
-    <div class="hint panel">中隊をタップ → 地面をタップで移動<br>ドラッグで視点回転 / ピンチ・ホイールでズーム</div>
-    <div id="toast" class="toast panel">命令受領</div>
-
-    <div class="bottom">
-      <div class="dock panel">
-        <div class="unit-card">
-          <div class="name">U.S. RIFLE COMPANY</div>
-          <div class="meta">HQ + 3 Rifle Platoons + Weapons Platoon / 193 personnel</div>
-        </div>
-        <button id="deployBtn" disabled>召喚 100</button>
-      </div>
-    </div>
+    <div id="toast" class="toast panel"></div>
+    <div class="bottom"><button id="deployBtn" disabled>歩兵中隊　100</button></div>
   </div>
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js';
 
-const container = document.getElementById('game');
-const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setSize(innerWidth, innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
-container.appendChild(renderer.domElement);
+const game = document.getElementById('game');
+const renderer = new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.05;
+game.appendChild(renderer.domElement);
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xaeb8b1);
-scene.fog = new THREE.FogExp2(0x9da7a2, 0.0046);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0xaab8b7);
+scene.fog=new THREE.FogExp2(0x9ca9a8,.0043);
 
-const camera = new THREE.PerspectiveCamera(48, innerWidth/innerHeight, 0.1, 500);
-camera.position.set(0, 78, 92);
+const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,420);
+const camTarget=new THREE.Vector3(0,0,-12);
+let camYaw=0,camPitch=.62,camDistance=118;
+function updateCamera(){
+  camPitch=THREE.MathUtils.clamp(camPitch,.28,1.32);
+  camDistance=THREE.MathUtils.clamp(camDistance,34,150);
+  const cp=Math.cos(camPitch);
+  camera.position.set(
+    camTarget.x+Math.sin(camYaw)*cp*camDistance,
+    camTarget.y+Math.sin(camPitch)*camDistance,
+    camTarget.z+Math.cos(camYaw)*cp*camDistance
+  );
+  camera.lookAt(camTarget);
+}
+updateCamera();
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 0, -8);
-controls.enableDamping = true;
-controls.dampingFactor = .08;
-controls.minDistance = 42;
-controls.maxDistance = 145;
-controls.maxPolarAngle = Math.PI * .47;
-controls.minPolarAngle = Math.PI * .18;
-controls.enablePan = false;
-
-scene.add(new THREE.HemisphereLight(0xd7e0de, 0x4a4335, 1.7));
-const sun = new THREE.DirectionalLight(0xfff0d0, 2.0);
-sun.position.set(-50, 90, 35); sun.castShadow = true;
-sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-100; sun.shadow.camera.right=100; sun.shadow.camera.top=100; sun.shadow.camera.bottom=-100;
+scene.add(new THREE.HemisphereLight(0xe4ece9,0x4a4538,1.8));
+const sun=new THREE.DirectionalLight(0xfff0d1,2.2);
+sun.position.set(-45,82,30);
+sun.castShadow=true;
+sun.shadow.mapSize.set(1536,1536);
+sun.shadow.camera.left=-95;sun.shadow.camera.right=95;sun.shadow.camera.top=95;sun.shadow.camera.bottom=-95;
 scene.add(sun);
 
-const MAP = 120;
-const coastZ = 8;
-
-function terrainHeight(x,z){
-  if (z < coastZ) return 0;
-  const inland = z-coastZ;
-  const bluff = 1.2 + Math.min(8, inland*0.16);
-  const undulation = Math.sin(x*.11)*0.7 + Math.sin(z*.08+x*.04)*0.5 + Math.cos(x*.035-z*.07)*0.4;
-  return bluff + undulation;
+const MAP=120;
+const COAST=7;
+function heightAt(x,z){
+  if(z<COAST) return 0;
+  const inland=z-COAST;
+  return 1.1+Math.min(7.8,inland*.15)+Math.sin(x*.11)*.65+Math.sin(z*.08+x*.035)*.45+Math.cos(x*.04-z*.06)*.35;
 }
 
-const terrainGeo = new THREE.PlaneGeometry(MAP, MAP, 70, 70);
-terrainGeo.rotateX(-Math.PI/2);
-const pos = terrainGeo.attributes.position;
-for(let i=0;i<pos.count;i++){
-  const x=pos.getX(i), z=pos.getZ(i);
-  pos.setY(i, terrainHeight(x,z));
+const seabed=new THREE.Mesh(
+  new THREE.PlaneGeometry(MAP,66).rotateX(-Math.PI/2),
+  new THREE.MeshStandardMaterial({color:0x315e70,roughness:.34,metalness:.03,transparent:true,opacity:.95})
+);
+seabed.position.set(0,-.12,-33);scene.add(seabed);
+
+const beach=new THREE.Mesh(
+  new THREE.PlaneGeometry(MAP,18).rotateX(-Math.PI/2),
+  new THREE.MeshStandardMaterial({color:0xb9a97d,roughness:1})
+);
+beach.position.set(0,.04,0);beach.receiveShadow=true;beach.userData.ground=true;scene.add(beach);
+
+const landGeo=new THREE.PlaneGeometry(MAP,62,64,36);landGeo.rotateX(-Math.PI/2);
+const lp=landGeo.attributes.position;
+for(let i=0;i<lp.count;i++){
+  const x=lp.getX(i), localZ=lp.getZ(i), worldZ=localZ+40;
+  lp.setY(i,heightAt(x,worldZ));
 }
-terrainGeo.computeVertexNormals();
-const terrain = new THREE.Mesh(terrainGeo, new THREE.MeshStandardMaterial({ color:0x68744f, roughness:1, metalness:0 }));
-terrain.position.z = MAP/2 - 24;
-terrain.receiveShadow = true;
-terrain.userData.isGround = true;
-scene.add(terrain);
+landGeo.computeVertexNormals();
+const land=new THREE.Mesh(landGeo,new THREE.MeshStandardMaterial({color:0x6a7952,roughness:1}));
+land.position.set(0,0,40);land.receiveShadow=true;land.userData.ground=true;scene.add(land);
 
-const beach = new THREE.Mesh(new THREE.PlaneGeometry(MAP, 19).rotateX(-Math.PI/2), new THREE.MeshStandardMaterial({color:0xb5a77f, roughness:1}));
-beach.position.set(0,.12,-1.2); beach.receiveShadow=true; beach.userData.isGround=true; scene.add(beach);
-
-const water = new THREE.Mesh(new THREE.PlaneGeometry(MAP, 82).rotateX(-Math.PI/2), new THREE.MeshPhysicalMaterial({color:0x3d6470, roughness:.28, metalness:.05, transparent:true, opacity:.92}));
-water.position.set(0,-.12,-50); scene.add(water);
-
-for(let i=0;i<6;i++){
-  const foam=new THREE.Mesh(new THREE.PlaneGeometry(MAP*.94, .18).rotateX(-Math.PI/2), new THREE.MeshBasicMaterial({color:0xd9dfdc,transparent:true,opacity:.38}));
-  foam.position.set(0,.03,-8-i*3.8); scene.add(foam);
+for(let i=0;i<4;i++){
+  const foam=new THREE.Mesh(new THREE.PlaneGeometry(MAP*.94,.22).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xe7ece9,transparent:true,opacity:.45}));
+  foam.position.set(0,.065,-7-i*2.1);scene.add(foam);
 }
 
-const hedgeMat = new THREE.MeshStandardMaterial({color:0x31422c, roughness:1});
-const roadMat = new THREE.MeshStandardMaterial({color:0x777064, roughness:1});
-function hedge(x,z,w,d,rot=0){ const y=terrainHeight(x,z)+1.15; const m=new THREE.Mesh(new THREE.BoxGeometry(w,2.3,d),hedgeMat); m.position.set(x,y,z); m.rotation.y=rot; m.castShadow=true; m.receiveShadow=true; scene.add(m); }
-function road(x,z,w,d,rot=0){ const y=terrainHeight(x,z)+.08; const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d).rotateX(-Math.PI/2),roadMat); m.position.set(x,y,z); m.rotation.y=rot; m.receiveShadow=true; scene.add(m); }
-for(const z of [22,38,55]){ hedge(-31,z,35,1.4,.05); hedge(29,z+4,42,1.4,-.08); }
-for(const x of [-38,-12,18,43]) hedge(x,49,1.4,45,Math.sin(x)*.04);
-road(-5,33,4,58,.1); road(28,47,3,44,-.42);
+const hedgeMat=new THREE.MeshStandardMaterial({color:0x30472c,roughness:1});
+function hedge(x,z,w,d,rot=0){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,2.2,d),hedgeMat);m.position.set(x,heightAt(x,z)+1.1,z);m.rotation.y=rot;m.castShadow=true;m.receiveShadow=true;scene.add(m);
+}
+for(const z of [24,40,57]){hedge(-31,z,36,1.4,.05);hedge(30,z+3,40,1.4,-.07)}
+for(const x of [-39,-13,18,43]) hedge(x,48,1.4,43,0);
+
+const roadMat=new THREE.MeshStandardMaterial({color:0x777064,roughness:1});
+function road(x,z,w,d,rot=0){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d).rotateX(-Math.PI/2),roadMat);m.position.set(x,heightAt(x,z)+.08,z);m.rotation.y=rot;m.receiveShadow=true;scene.add(m)}
+road(-5,38,4,58,.08);road(29,47,3.2,43,-.4);
 
 function bunker(x,z){
   const g=new THREE.Group();
-  const base=new THREE.Mesh(new THREE.BoxGeometry(8,2.6,5),new THREE.MeshStandardMaterial({color:0x65665d,roughness:1})); base.position.y=1.3; base.castShadow=true; g.add(base);
-  const slit=new THREE.Mesh(new THREE.BoxGeometry(4.2,.45,.2),new THREE.MeshBasicMaterial({color:0x1b1c1a})); slit.position.set(0,1.4,-2.58); g.add(slit);
-  g.position.set(x,terrainHeight(x,z),z); g.rotation.y=Math.PI; scene.add(g); return g;
+  const concrete=new THREE.MeshStandardMaterial({color:0x66685f,roughness:1});
+  const base=new THREE.Mesh(new THREE.BoxGeometry(8,2.7,5),concrete);base.position.y=1.35;base.castShadow=true;g.add(base);
+  const slit=new THREE.Mesh(new THREE.BoxGeometry(4.2,.42,.22),new THREE.MeshBasicMaterial({color:0x181a18}));slit.position.set(0,1.45,-2.61);g.add(slit);
+  g.position.set(x,heightAt(x,z),z);g.rotation.y=Math.PI;scene.add(g);
 }
-[-35,-8,26,46].forEach((x,i)=>bunker(x,13+Math.abs(i-1.5)*2));
+[-38,-12,18,43].forEach((x,i)=>bunker(x,12+Math.abs(i-1.5)*1.7));
 
-function makeCarrier(){
+function ship(x,z,s=1){
   const g=new THREE.Group();
-  const hull=new THREE.Mesh(new THREE.BoxGeometry(30,3.8,8),new THREE.MeshStandardMaterial({color:0x343c41,roughness:.72,metalness:.28})); hull.position.y=1.4; hull.castShadow=true; g.add(hull);
-  const deck=new THREE.Mesh(new THREE.BoxGeometry(32,.8,9),new THREE.MeshStandardMaterial({color:0x505a5d,roughness:.9})); deck.position.y=3.55; deck.castShadow=true; g.add(deck);
-  const island=new THREE.Mesh(new THREE.BoxGeometry(4,5,3),new THREE.MeshStandardMaterial({color:0x475155,roughness:.8})); island.position.set(5,6,1.8); island.castShadow=true; g.add(island);
-  g.position.set(0,0,-78); scene.add(g); return g;
+  const hull=new THREE.Mesh(new THREE.BoxGeometry(13*s,1.8*s,3.4*s),new THREE.MeshStandardMaterial({color:0x3b464b,roughness:.75,metalness:.18}));hull.position.y=.75*s;hull.castShadow=true;g.add(hull);
+  const cabin=new THREE.Mesh(new THREE.BoxGeometry(3.2*s,2.2*s,2.3*s),new THREE.MeshStandardMaterial({color:0x515c60,roughness:.75}));cabin.position.set(1.5*s,2.25*s,0);cabin.castShadow=true;g.add(cabin);
+  g.position.set(x,0,z);scene.add(g);return g;
 }
-const carrier=makeCarrier();
-for(const x of [-45,-25,28,48]){ const ship=new THREE.Mesh(new THREE.BoxGeometry(11,1.6,3),new THREE.MeshStandardMaterial({color:0x3d464a})); ship.position.set(x,.55,-68-Math.random()*15); ship.rotation.y=(Math.random()-.5)*.25; ship.castShadow=true; scene.add(ship); }
+ship(0,-51,1.55);ship(-34,-47,.8);ship(31,-53,.85);ship(48,-43,.68);
 
-const companyTemplate = { name:'U.S. Rifle Company', strength:193, officers:6, enlisted:187, subunits:['Company HQ','1st Rifle Platoon','2nd Rifle Platoon','3rd Rifle Platoon','Weapons Platoon'], cost:100 };
-let supply=30, companySeq=0, selected=null;
-const companies=[]; const landingGroups=[];
-const deployBtn=document.getElementById('deployBtn'), supplyText=document.getElementById('supplyText'), supplyFill=document.getElementById('supplyFill');
-const selection=document.getElementById('selection'), selectionTitle=document.getElementById('selectionTitle'), selectionMeta=document.getElementById('selectionMeta');
+const companyTemplate={name:'U.S. Rifle Company',strength:193,officers:6,enlisted:187,cost:100};
+let supply=35,companySeq=0,selected=null;
+const companies=[],landings=[];
+const deployBtn=document.getElementById('deployBtn');
+const supplyText=document.getElementById('supplyText');
+const supplyFill=document.getElementById('supplyFill');
+const selection=document.getElementById('selection');
+const selectionTitle=document.getElementById('selectionTitle');
+const selectionMeta=document.getElementById('selectionMeta');
 const toast=document.getElementById('toast');
-function notify(t){toast.textContent=t;toast.classList.add('show');clearTimeout(notify._t);notify._t=setTimeout(()=>toast.classList.remove('show'),1200)}
-function updateSupplyUI(){ supply=Math.min(500,supply); supplyText.textContent=`${Math.floor(supply)} / 500`; supplyFill.style.width=`${(supply/500)*100}%`; deployBtn.disabled=supply<companyTemplate.cost; }
-function makeLandingCraft(x,z){ const g=new THREE.Group(); const hull=new THREE.Mesh(new THREE.BoxGeometry(3.7,1.0,7),new THREE.MeshStandardMaterial({color:0x68695e,roughness:.85})); hull.position.y=.4; hull.castShadow=true; g.add(hull); const bay=new THREE.Mesh(new THREE.BoxGeometry(2.7,.3,4.4),new THREE.MeshStandardMaterial({color:0x3e413b,roughness:1})); bay.position.set(0,1.02,.1); g.add(bay); g.position.set(x,0,z); scene.add(g); return g; }
-function soldierMesh(color=0x647153){ const g=new THREE.Group(); const body=new THREE.Mesh(new THREE.CapsuleGeometry(.28,.8,4,8),new THREE.MeshStandardMaterial({color,roughness:1})); body.position.y=.7; body.castShadow=true; g.add(body); const helmet=new THREE.Mesh(new THREE.SphereGeometry(.34,8,6,0,Math.PI*2,0,Math.PI*.6),new THREE.MeshStandardMaterial({color:0x586149,roughness:1})); helmet.position.y=1.48; helmet.castShadow=true; g.add(helmet); return g; }
-function makeCompanyUnit(id,x,z){
-  const root=new THREE.Group(); root.userData.type='company'; root.userData.id=id;
-  const positions=[[-1.7,-1],[-.55,-1],[.55,-1],[1.7,-1],[-1.7,.2],[-.55,.2],[.55,.2],[1.7,.2],[-1.2,1.45],[0,1.45],[1.2,1.45]];
-  positions.forEach((p,i)=>{ const s=soldierMesh(i===0?0x78856a:0x5f6e50); s.position.set(p[0],0,p[1]); root.add(s); });
-  const ring=new THREE.Mesh(new THREE.RingGeometry(3.2,3.55,32).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xefe1ac,transparent:true,opacity:.85,side:THREE.DoubleSide})); ring.position.y=.08; ring.visible=false; root.add(ring); root.userData.ring=ring;
-  root.position.set(x,terrainHeight(x,z),z); root.userData.target=new THREE.Vector3(x,terrainHeight(x,z),z); root.userData.speed=5.4; root.userData.health=100; root.userData.meta={...companyTemplate,id}; scene.add(root); companies.push(root); return root;
+
+function notify(text){toast.textContent=text;toast.classList.add('show');clearTimeout(notify.t);notify.t=setTimeout(()=>toast.classList.remove('show'),1000)}
+function updateSupply(){supply=Math.min(500,supply);const n=Math.floor(supply);supplyText.textContent=`${n} / 500`;supplyFill.style.width=`${supply/5}%`;deployBtn.disabled=supply<companyTemplate.cost}
+
+function landingCraft(x,z){
+  const g=new THREE.Group();
+  const hull=new THREE.Mesh(new THREE.BoxGeometry(3.8,1,6.6),new THREE.MeshStandardMaterial({color:0x666c63,roughness:.9}));hull.position.y=.42;hull.castShadow=true;g.add(hull);
+  const bay=new THREE.Mesh(new THREE.BoxGeometry(2.8,.28,4.1),new THREE.MeshStandardMaterial({color:0x393e39,roughness:1}));bay.position.set(0,1,.15);g.add(bay);
+  for(let i=0;i<4;i++){
+    const man=new THREE.Mesh(new THREE.CapsuleGeometry(.15,.42,3,6),new THREE.MeshStandardMaterial({color:0x58674b,roughness:1}));
+    man.position.set((i%2?1:-1)*.55,1.05,(Math.floor(i/2)-.5)*1.2);g.add(man);
+  }
+  g.position.set(x,0,z);scene.add(g);return g;
 }
+function soldier(){
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.CapsuleGeometry(.27,.78,4,7),new THREE.MeshStandardMaterial({color:0x5e6d50,roughness:1}));body.position.y=.67;body.castShadow=true;g.add(body);
+  const helmet=new THREE.Mesh(new THREE.SphereGeometry(.33,8,6,0,Math.PI*2,0,Math.PI*.62),new THREE.MeshStandardMaterial({color:0x535f45,roughness:1}));helmet.position.y=1.43;helmet.castShadow=true;g.add(helmet);return g;
+}
+function companyUnit(id,x,z){
+  const root=new THREE.Group();root.userData.type='company';root.userData.id=id;
+  [[-1.7,-1],[-.55,-1],[.55,-1],[1.7,-1],[-1.7,.2],[-.55,.2],[.55,.2],[1.7,.2],[-1.2,1.45],[0,1.45],[1.2,1.45]].forEach(p=>{const s=soldier();s.position.set(p[0],0,p[1]);root.add(s)});
+  const ring=new THREE.Mesh(new THREE.RingGeometry(3.1,3.45,32).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xf1df9e,side:THREE.DoubleSide,transparent:true,opacity:.9}));ring.position.y=.08;ring.visible=false;root.add(ring);
+  root.position.set(x,heightAt(x,z),z);root.userData.ring=ring;root.userData.target=new THREE.Vector3(x,heightAt(x,z),z);root.userData.speed=5.2;root.userData.meta={...companyTemplate,id};scene.add(root);companies.push(root);return root;
+}
+
 function deployCompany(){
-  if(supply<companyTemplate.cost) return; supply-=companyTemplate.cost; updateSupplyUI(); const id=++companySeq; const craft=[];
-  for(let i=0;i<6;i++) craft.push(makeLandingCraft(-10+i*4,-70-(i%2)*5));
-  landingGroups.push({id,craft,phase:'sea',progress:0,beachX:-26 + ((id*17)%52),targetZ:-2+((id%3)-1)*2}); notify(`第${id}中隊：上陸開始`);
+  if(supply<companyTemplate.cost)return;
+  supply-=companyTemplate.cost;updateSupply();
+  const id=++companySeq;const craft=[];
+  for(let i=0;i<6;i++)craft.push(landingCraft(-10+i*4,-54-(i%2)*3.5));
+  landings.push({id,craft,t:0,phase:'sea',beachX:-26+((id*17)%52)});
+  notify(`第${id}中隊 上陸開始`);
 }
 deployBtn.addEventListener('click',deployCompany);
 
-const raycaster=new THREE.Raycaster(); const pointer=new THREE.Vector2(); let pointerDown={x:0,y:0,t:0};
-renderer.domElement.addEventListener('pointerdown',e=>{pointerDown={x:e.clientX,y:e.clientY,t:performance.now()}});
-renderer.domElement.addEventListener('pointerup',e=>{
-  const moved=Math.hypot(e.clientX-pointerDown.x,e.clientY-pointerDown.y); if(moved>8) return;
-  pointer.x=(e.clientX/innerWidth)*2-1; pointer.y=-(e.clientY/innerHeight)*2+1; raycaster.setFromCamera(pointer,camera);
-  const unitHits=raycaster.intersectObjects(companies,true);
-  if(unitHits.length){ let o=unitHits[0].object; while(o.parent && o.userData.type!=='company') o=o.parent; if(o.userData.type==='company'){ selectCompany(o); return; } }
-  if(selected){ const groundHits=raycaster.intersectObjects([terrain,beach],false); if(groundHits.length){ const p=groundHits[0].point; selected.userData.target.set(p.x,terrainHeight(p.x,p.z),p.z); notify(`第${selected.userData.id}中隊：移動命令`); return; } }
+function selectCompany(c){
+  if(selected?.userData.ring)selected.userData.ring.visible=false;
+  selected=c;c.userData.ring.visible=true;
+  selection.classList.add('active');selectionTitle.textContent=`第${c.userData.id}中隊`;selectionMeta.textContent='193名';
+}
+
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
+const activePointers=new Map();
+let down={x:0,y:0},dragged=false,lastPinch=0;
+renderer.domElement.addEventListener('pointerdown',e=>{
+  renderer.domElement.setPointerCapture?.(e.pointerId);
+  activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  down={x:e.clientX,y:e.clientY};dragged=false;lastPinch=0;
 });
-function selectCompany(c){ if(selected?.userData.ring) selected.userData.ring.visible=false; selected=c; c.userData.ring.visible=true; const m=c.userData.meta; selection.classList.add('active'); selectionTitle.textContent=`第${m.id}中隊 / ${m.name}`; selectionMeta.textContent=`${m.strength}名｜将校${m.officers}・下士官兵${m.enlisted}｜HQ + 小銃小隊×3 + 火器小隊`; }
-function animateLanding(dt){
-  for(let i=landingGroups.length-1;i>=0;i--){
-    const g=landingGroups[i]; g.progress+=dt;
+renderer.domElement.addEventListener('pointermove',e=>{
+  const prev=activePointers.get(e.pointerId);if(!prev)return;
+  activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const pts=[...activePointers.values()];
+  if(pts.length===1){
+    const dx=e.clientX-prev.x,dy=e.clientY-prev.y;
+    if(Math.hypot(e.clientX-down.x,e.clientY-down.y)>6)dragged=true;
+    camYaw-=dx*.006;camPitch+=dy*.0045;updateCamera();
+  }else if(pts.length===2){
+    dragged=true;const d=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+    if(lastPinch)camDistance-=(d-lastPinch)*.18;lastPinch=d;updateCamera();
+  }
+});
+renderer.domElement.addEventListener('pointerup',e=>{
+  activePointers.delete(e.pointerId);lastPinch=0;
+  if(dragged||Math.hypot(e.clientX-down.x,e.clientY-down.y)>9)return;
+  const r=renderer.domElement.getBoundingClientRect();
+  pointer.x=((e.clientX-r.left)/r.width)*2-1;pointer.y=-((e.clientY-r.top)/r.height)*2+1;raycaster.setFromCamera(pointer,camera);
+  const unitHits=raycaster.intersectObjects(companies,true);
+  if(unitHits.length){let o=unitHits[0].object;while(o.parent&&o.userData.type!=='company')o=o.parent;if(o.userData.type==='company'){selectCompany(o);return}}
+  if(selected){const hit=raycaster.intersectObjects([land,beach],false)[0];if(hit){const p=hit.point;selected.userData.target.set(p.x,heightAt(p.x,p.z),p.z);notify(`第${selected.userData.id}中隊 移動`)}}
+});
+renderer.domElement.addEventListener('pointercancel',e=>{activePointers.delete(e.pointerId);lastPinch=0});
+renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();camDistance+=e.deltaY*.06;updateCamera()},{passive:false});
+
+function updateLandings(dt){
+  for(let i=landings.length-1;i>=0;i--){
+    const g=landings[i];g.t+=dt;
     if(g.phase==='sea'){
-      const t=Math.min(1,g.progress/10.5); const smooth=t*t*(3-2*t);
-      g.craft.forEach((c,j)=>{ const sx=-10+j*4, sz=-70-(j%2)*5; c.position.x=THREE.MathUtils.lerp(sx,g.beachX+(j-2.5)*2.1,smooth); c.position.z=THREE.MathUtils.lerp(sz,g.targetZ-6+(j%2)*1.4,smooth); c.rotation.y=THREE.MathUtils.lerp(0,Math.PI*.02,smooth); });
-      if(t>=1){ g.phase='unload'; g.progress=0; const unit=makeCompanyUnit(g.id,g.beachX,1.4); unit.scale.setScalar(.01); g.unit=unit; }
-    } else if(g.phase==='unload'){
-      const t=Math.min(1,g.progress/1.6); g.unit.scale.setScalar(.01 + .99*t); g.craft.forEach(c=>c.position.z-=dt*4.2);
-      if(t>=1){ g.craft.forEach(c=>scene.remove(c)); landingGroups.splice(i,1); notify(`第${g.id}中隊：上陸完了`); }
+      const t=Math.min(1,g.t/8.8),s=t*t*(3-2*t);
+      g.craft.forEach((c,j)=>{const sx=-10+j*4,sz=-54-(j%2)*3.5;c.position.x=THREE.MathUtils.lerp(sx,g.beachX+(j-2.5)*2.1,s);c.position.z=THREE.MathUtils.lerp(sz,-7+(j%2)*1.1,s)});
+      if(t>=1){g.phase='unload';g.t=0;g.unit=companyUnit(g.id,g.beachX,1.8);g.unit.scale.setScalar(.01)}
+    }else{
+      const t=Math.min(1,g.t/1.4);g.unit.scale.setScalar(.01+.99*t);g.craft.forEach(c=>c.position.z-=dt*4);
+      if(t>=1){g.craft.forEach(c=>scene.remove(c));landings.splice(i,1);notify(`第${g.id}中隊 上陸完了`)}
     }
   }
 }
-function animateCompanies(dt){
-  for(const c of companies){ const target=c.userData.target; const flatTarget=new THREE.Vector3(target.x,c.position.y,target.z); const d=flatTarget.clone().sub(c.position); const dist=d.length(); if(dist>.35){ d.normalize(); const step=Math.min(dist,c.userData.speed*dt); c.position.addScaledVector(d,step); c.rotation.y=Math.atan2(d.x,d.z); c.position.y=terrainHeight(c.position.x,c.position.z); } }
+function updateCompanies(dt){
+  for(const c of companies){const target=c.userData.target;const d=new THREE.Vector3(target.x-c.position.x,0,target.z-c.position.z);const dist=d.length();if(dist>.3){d.normalize();c.position.addScaledVector(d,Math.min(dist,c.userData.speed*dt));c.rotation.y=Math.atan2(d.x,d.z);c.position.y=heightAt(c.position.x,c.position.z)}}
 }
+
 let last=performance.now();
-function loop(now){ requestAnimationFrame(loop); const dt=Math.min(.05,(now-last)/1000); last=now; supply += dt*9; updateSupplyUI(); animateLanding(dt); animateCompanies(dt); controls.update(); water.material.opacity=.90 + Math.sin(now*.0012)*.02; renderer.render(scene,camera); }
-updateSupplyUI(); requestAnimationFrame(loop);
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;supply+=dt*9;updateSupply();updateLandings(dt);updateCompanies(dt);renderer.render(scene,camera)}
+updateSupply();requestAnimationFrame(loop);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script>
 </body>
