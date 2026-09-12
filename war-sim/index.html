@@ -6,7 +6,7 @@
 </style></head><body>
 <div id="bootStatus"><div class="card"><strong id="bootTitle">3Dを起動中…</strong><span id="bootMessage">WebGL と描画ライブラリを確認しています。</span><pre id="bootError" hidden></pre></div></div>
 <div id="pcHint"><strong>PC推奨</strong><span>マウスとキーボードでのプレイを推奨</span></div><div id="game"></div>
-<div class="hud"><div class="supply panel"><div class="row"><span>補給</span><span id="supplyText">0 / 500</span></div><div class="bar"><div id="supplyFill"></div></div></div><div id="selection" class="selection panel"><strong id="selectionTitle"></strong><span id="selectionMeta"></span><div id="selectionState"></div></div><div id="toast" class="toast panel"></div><div id="crosshair" class="crosshair"></div><div class="controls panel">WASD 移動 / Shift 高速 / 右ドラッグ 視点 / ホイール ズーム<br>左クリック 移動 / ダブルクリック 一斉射撃</div><div class="bottom"><button id="deployBtn" disabled>歩兵中隊　100</button></div></div>
+<div class="hud"><div class="supply panel"><div class="row"><span>補給</span><span id="supplyText">0 / 500</span></div><div class="bar"><div id="supplyFill"></div></div></div><div id="selection" class="selection panel"><strong id="selectionTitle"></strong><span id="selectionMeta"></span><div id="selectionState"></div></div><div id="toast" class="toast panel"></div><div id="crosshair" class="crosshair"></div><div class="controls panel">WASD 移動 / Shift 高速 / 右ドラッグ 視点 / ホイール ズーム<br>左クリック 移動 / ダブルクリック 分隊攻撃</div><div class="bottom"><button id="deployBtn" disabled>歩兵分隊　30</button></div></div>
 <script type="module">
 const status=document.getElementById('bootStatus'),title=document.getElementById('bootTitle'),message=document.getElementById('bootMessage'),errorBox=document.getElementById('bootError');
 let failed=false;
@@ -23,7 +23,7 @@ window.addEventListener('unhandledrejection',e=>showFatal('読み込み処理で
   const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
   if(!THREE.WebGLRenderer||!THREE.Scene||!THREE.PerspectiveCamera)throw new Error('Three.js の必要な機能を読み込めませんでした。');
   message.textContent='戦場を初期化しています…';
-  await import('./app.js?v=20260911-2117');
+  await import('./app.js?v=20260912-squad-agents');
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   const canvas=document.querySelector('#game canvas');
   if(!canvas)throw new Error('WebGLキャンバスが生成されませんでした。');
