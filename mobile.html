@@ -1753,19 +1753,18 @@ body.dragging-shovel {
 .preference-progress span.done { background:#b27b27; }
 .preference-stage[hidden] { display:none; }
 .preference-carousel { position:relative; display:flex; align-items:center; gap:8px; }
-.preference-viewport { flex:1; min-width:0; overflow:hidden; touch-action:pan-y; cursor:grab; }
+.preference-viewport { flex:1; min-width:0; overflow:hidden; touch-action:pan-y; cursor:grab; perspective:800px; perspective-origin:50% 45%; }
 .preference-viewport.dragging { cursor:grabbing; }
-.preference-track { position:relative; display:flex; gap:14px; padding:12px max(0px, calc((100% - 190px) / 2)); transition:transform .45s cubic-bezier(.2,.8,.2,1); will-change:transform; }
-.preference-track.dragging { transition:none; }
-.preference-card { flex:0 0 190px; width:190px; height:245px; border:0; padding:0; background:none; color:#34231a; opacity:.45; transform:scale(.85); transition:opacity .35s, transform .35s; cursor:pointer; }
-.preference-card.current { opacity:1; transform:scale(1); }
+.preference-track { position:relative; height:calc(clamp(230px, 38vh, 300px) + 20px); transform-style:preserve-3d; }
+.preference-card { position:absolute; top:50%; left:50%; width:clamp(150px, 34vw, 190px); height:clamp(230px, 38vh, 300px); border:0; padding:0; background:none; color:#34231a; cursor:pointer; opacity:var(--wheel-opacity, 0); transform:var(--wheel-transform, translate(-50%, -50%)); transition:transform .62s cubic-bezier(.2,.8,.2,1),opacity .45s ease; will-change:transform; }
+.preference-card.current { filter:drop-shadow(0 12px 16px #54381b35); }
+.preference-viewport.dragging .preference-card { transition:none; }
 .preference-card:focus-visible, .preference-arrow:focus-visible { outline:3px solid #a16616; outline-offset:3px; }
 .preference-figure { position:relative; display:flex; justify-content:center; align-items:center; width:100%; height:100%; font-size:20px; font-weight:900; }
-.preference-card.shovel .preference-figure::before { content:""; position:absolute; width:30px; height:175px; top:3px; background:linear-gradient(90deg,#754a29,#c19259,#754a29); border:4px solid #473322; border-radius:20px; }
-.preference-card.shovel .preference-figure::after { content:""; position:absolute; width:154px; height:136px; bottom:3px; background:linear-gradient(145deg,#e4ad59,#a96328 70%,#6b3c20); border:5px solid #4a3020; border-radius:55% 55% 48% 48% / 22% 22% 75% 75%; box-shadow:inset 9px 9px 12px #fff4, 0 12px 20px #44331e35; }
+.shovel-illustration { display:block; width:min(100%, 160px); height:100%; overflow:visible; pointer-events:none; }
 .preference-card.preference-ore .preference-figure::before { content:""; position:absolute; inset:25px 12px; background:linear-gradient(140deg,#ffdf8c 0 22%,#c38737 23% 55%,#805029 56%); clip-path:polygon(28% 0,75% 8%,100% 38%,87% 82%,55% 100%,8% 82%,0 36%); filter:drop-shadow(0 10px 9px #4b2b1b55); }
 .preference-label { position:relative; z-index:1; display:block; max-width:140px; padding:9px 5px; background:#f9eed0ed; border:2px solid #644520; border-radius:8px; box-shadow:0 4px 0 #614320; line-height:1.25; }
-.preference-card.shovel .preference-label { margin-top:65px; }
+.preference-card.shovel .preference-label { position:absolute; top:27%; left:50%; transform:translateX(-50%); max-width:125px; white-space:nowrap; }
 .preference-arrow { flex:0 0 34px; width:34px; height:44px; border:1px solid #b89a6f; border-radius:9px; background:#fff8e8; color:#533a1e; font-size:23px; cursor:pointer; }
 .preference-hint { margin:8px 0 0; color:#77634c; text-align:center; font-size:11px; }
 .preference-selection { min-height:20px; margin:12px 0 0; text-align:center; font-size:12px; font-weight:800; }
@@ -1775,7 +1774,7 @@ body.dragging-shovel {
 .snapshot-card.priority-feature { grid-column:1 / -1; border:2px solid #bc8132; background:linear-gradient(120deg,#fff2cf,#fffaf0); box-shadow:0 7px 18px #9b6a2424; }
 .snapshot-card.priority-feature small { color:#8d5a1f; font-size:10px; }
 .snapshot-card.priority-feature strong { font-size:22px; overflow-wrap:anywhere; }
-@media (prefers-reduced-motion:reduce) { .preference-track,.preference-card { transition:none; } }
+@media (prefers-reduced-motion:reduce) { .preference-card { transition:none; } }
 .analytics-badge {
   position: fixed;
   left: 12px;
@@ -2829,45 +2828,85 @@ function setupOnboardingSurvey() {
   };
   const selected = { occupation: 0, priority: 0 };
   let stage = "occupation";
-  function select(kind, index) {
+  function paintWheel(kind, position) {
     const track = document.getElementById(`${kind}Track`);
     const viewport = document.getElementById(`${kind}Viewport`);
-    selected[kind] = Math.max(0, Math.min(choices[kind].length - 1, index));
-    const card = track.children[selected[kind]];
-    track.style.transform = `translateX(${-card.offsetLeft + (viewport.clientWidth - card.offsetWidth) / 2}px)`;
+    const radius = Math.min(185, Math.max(130, viewport.clientWidth * .55));
+    const count = choices[kind].length;
+    [...track.children].forEach((item, i) => {
+      let distance = i - position;
+      if (distance > count / 2) distance -= count;
+      if (distance < -count / 2) distance += count;
+      const angle = distance * Math.PI / 3;
+      const depth = Math.abs(distance);
+      const x = Math.sin(angle) * radius;
+      const y = (1 - Math.cos(angle)) * 17;
+      const z = (Math.cos(angle) - 1) * 115;
+      const yaw = -Math.sin(angle) * 35;
+      const tilt = -Math.sin(angle) * 7;
+      const scale = Math.max(.63, 1 - depth * .085);
+      item.style.setProperty("--wheel-transform",
+        `translate(-50%, -50%) translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px) rotateY(${yaw.toFixed(1)}deg) rotateZ(${tilt.toFixed(1)}deg) scale(${scale.toFixed(3)})`);
+      item.style.setProperty("--wheel-opacity", String(Math.max(.1, 1 - depth * .33)));
+      item.style.zIndex = String(100 - Math.round(depth * 10));
+      item.style.pointerEvents = depth < 1.5 ? "auto" : "none";
+    });
+  }
+  function select(kind, index) {
+    const track = document.getElementById(`${kind}Track`);
+    const count = choices[kind].length;
+    selected[kind] = ((index % count) + count) % count;
+    paintWheel(kind, selected[kind]);
     [...track.children].forEach((item, i) => {
       item.classList.toggle("current", i === selected[kind]);
       item.setAttribute("aria-pressed", String(i === selected[kind]));
     });
     document.getElementById(`${kind}Selection`).textContent = choices[kind][selected[kind]];
   }
+  const shovelArt = '<img class="shovel-illustration" src="preference-shovel.svg" alt="" draggable="false">';
   for (const kind of ["occupation", "priority"]) {
     const track = document.getElementById(`${kind}Track`);
     const viewport = document.getElementById(`${kind}Viewport`);
-    track.innerHTML = choices[kind].map((name, i) => `<button class="preference-card ${kind === "occupation" ? "shovel" : "preference-ore"}" type="button" aria-pressed="${i === 0}"><span class="preference-figure"><span class="preference-label">${name}</span></span></button>`).join("");
+    track.innerHTML = choices[kind].map((name, i) => `<button class="preference-card ${kind === "occupation" ? "shovel" : "preference-ore"}" type="button" aria-pressed="${i === 0}"><span class="preference-figure">${kind === "occupation" ? shovelArt : ""}<span class="preference-label">${name}</span></span></button>`).join("");
     let suppressClick = false;
     track.addEventListener("click", event => {
       if (suppressClick) { event.preventDefault(); event.stopPropagation(); suppressClick = false; }
     }, true);
     [...track.children].forEach((card, i) => card.addEventListener("click", () => select(kind, i)));
     let origin = null;
-    viewport.addEventListener("pointerdown", event => { origin = event.clientX; suppressClick = false; });
+    let dragging = false;
+    viewport.addEventListener("pointerdown", event => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      origin = event.clientX;
+      suppressClick = false;
+    });
     viewport.addEventListener("pointermove", event => {
-      if (origin === null || Math.abs(event.clientX - origin) < 5) return;
-      track.classList.add("dragging");
-      const card = track.children[selected[kind]];
-      const center = -card.offsetLeft + (viewport.clientWidth - card.offsetWidth) / 2;
-      track.style.transform = `translateX(${center + event.clientX - origin}px)`;
+      if (origin === null || Math.abs(event.clientX - origin) < 5 && !dragging) return;
+      if (!dragging) {
+        dragging = true;
+        viewport.classList.add("dragging");
+        viewport.setPointerCapture?.(event.pointerId);
+      }
+      const turns = Math.max(-1.4, Math.min(1.4,
+        (origin - event.clientX) / Math.max(120, viewport.clientWidth * .33)));
+      paintWheel(kind, selected[kind] + turns);
     });
     viewport.addEventListener("pointerup", event => {
       if (origin === null) return;
       const delta = event.clientX - origin;
       origin = null;
-      track.classList.remove("dragging");
+      viewport.classList.remove("dragging");
+      if (dragging && viewport.hasPointerCapture?.(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
+      dragging = false;
       if (Math.abs(delta) > 32) { suppressClick = true; select(kind, selected[kind] + (delta < 0 ? 1 : -1)); }
       else select(kind, selected[kind]);
     });
-    viewport.addEventListener("pointercancel", () => { origin = null; track.classList.remove("dragging"); select(kind, selected[kind]); });
+    viewport.addEventListener("pointercancel", () => {
+      origin = null;
+      dragging = false;
+      viewport.classList.remove("dragging");
+      select(kind, selected[kind]);
+    });
     viewport.addEventListener("keydown", event => {
       if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
         event.preventDefault(); select(kind, selected[kind] + (event.key === "ArrowRight" ? 1 : -1));
