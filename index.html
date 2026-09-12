@@ -1763,7 +1763,7 @@ body.dragging-shovel {
 .preference-figure { position:relative; display:flex; justify-content:center; align-items:center; width:100%; height:100%; font-size:20px; font-weight:900; }
 .preference-card.shovel .preference-figure::before { content:""; position:absolute; width:30px; height:175px; top:3px; background:linear-gradient(90deg,#754a29,#c19259,#754a29); border:4px solid #473322; border-radius:20px; }
 .preference-card.shovel .preference-figure::after { content:""; position:absolute; width:154px; height:136px; bottom:3px; background:linear-gradient(145deg,#e4ad59,#a96328 70%,#6b3c20); border:5px solid #4a3020; border-radius:55% 55% 48% 48% / 22% 22% 75% 75%; box-shadow:inset 9px 9px 12px #fff4, 0 12px 20px #44331e35; }
-.preference-card.ore .preference-figure::before { content:""; position:absolute; inset:25px 12px; background:linear-gradient(140deg,#ffdf8c 0 22%,#c38737 23% 55%,#805029 56%); clip-path:polygon(28% 0,75% 8%,100% 38%,87% 82%,55% 100%,8% 82%,0 36%); filter:drop-shadow(0 10px 9px #4b2b1b55); }
+.preference-card.preference-ore .preference-figure::before { content:""; position:absolute; inset:25px 12px; background:linear-gradient(140deg,#ffdf8c 0 22%,#c38737 23% 55%,#805029 56%); clip-path:polygon(28% 0,75% 8%,100% 38%,87% 82%,55% 100%,8% 82%,0 36%); filter:drop-shadow(0 10px 9px #4b2b1b55); }
 .preference-label { position:relative; z-index:1; display:block; max-width:140px; padding:9px 5px; background:#f9eed0ed; border:2px solid #644520; border-radius:8px; box-shadow:0 4px 0 #614320; line-height:1.25; }
 .preference-card.shovel .preference-label { margin-top:65px; }
 .preference-arrow { flex:0 0 34px; width:34px; height:44px; border:1px solid #b89a6f; border-radius:9px; background:#fff8e8; color:#533a1e; font-size:23px; cursor:pointer; }
@@ -2844,7 +2844,7 @@ function setupOnboardingSurvey() {
   for (const kind of ["occupation", "priority"]) {
     const track = document.getElementById(`${kind}Track`);
     const viewport = document.getElementById(`${kind}Viewport`);
-    track.innerHTML = choices[kind].map((name, i) => `<button class="preference-card ${kind === "occupation" ? "shovel" : "ore"}" type="button" aria-pressed="${i === 0}"><span class="preference-figure"><span class="preference-label">${name}</span></span></button>`).join("");
+    track.innerHTML = choices[kind].map((name, i) => `<button class="preference-card ${kind === "occupation" ? "shovel" : "preference-ore"}" type="button" aria-pressed="${i === 0}"><span class="preference-figure"><span class="preference-label">${name}</span></span></button>`).join("");
     let suppressClick = false;
     track.addEventListener("click", event => {
       if (suppressClick) { event.preventDefault(); event.stopPropagation(); suppressClick = false; }
