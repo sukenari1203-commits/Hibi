@@ -1748,6 +1748,34 @@ body.dragging-shovel {
   font-size: 10px;
   font-weight: 700;
 }
+.preference-progress { display:flex; gap:8px; margin: 18px 0 24px; }
+.preference-progress span { flex:1; height:4px; border-radius:9px; background:#e3d6bd; }
+.preference-progress span.done { background:#b27b27; }
+.preference-stage[hidden] { display:none; }
+.preference-carousel { position:relative; display:flex; align-items:center; gap:8px; }
+.preference-viewport { flex:1; min-width:0; overflow:hidden; touch-action:pan-y; cursor:grab; }
+.preference-viewport.dragging { cursor:grabbing; }
+.preference-track { position:relative; display:flex; gap:14px; padding:12px max(0px, calc((100% - 190px) / 2)); transition:transform .45s cubic-bezier(.2,.8,.2,1); will-change:transform; }
+.preference-track.dragging { transition:none; }
+.preference-card { flex:0 0 190px; width:190px; height:245px; border:0; padding:0; background:none; color:#34231a; opacity:.45; transform:scale(.85); transition:opacity .35s, transform .35s; cursor:pointer; }
+.preference-card.current { opacity:1; transform:scale(1); }
+.preference-card:focus-visible, .preference-arrow:focus-visible { outline:3px solid #a16616; outline-offset:3px; }
+.preference-figure { position:relative; display:flex; justify-content:center; align-items:center; width:100%; height:100%; font-size:20px; font-weight:900; }
+.preference-card.shovel .preference-figure::before { content:""; position:absolute; width:30px; height:175px; top:3px; background:linear-gradient(90deg,#754a29,#c19259,#754a29); border:4px solid #473322; border-radius:20px; }
+.preference-card.shovel .preference-figure::after { content:""; position:absolute; width:154px; height:136px; bottom:3px; background:linear-gradient(145deg,#e4ad59,#a96328 70%,#6b3c20); border:5px solid #4a3020; border-radius:55% 55% 48% 48% / 22% 22% 75% 75%; box-shadow:inset 9px 9px 12px #fff4, 0 12px 20px #44331e35; }
+.preference-card.ore .preference-figure::before { content:""; position:absolute; inset:25px 12px; background:linear-gradient(140deg,#ffdf8c 0 22%,#c38737 23% 55%,#805029 56%); clip-path:polygon(28% 0,75% 8%,100% 38%,87% 82%,55% 100%,8% 82%,0 36%); filter:drop-shadow(0 10px 9px #4b2b1b55); }
+.preference-label { position:relative; z-index:1; display:block; max-width:140px; padding:9px 5px; background:#f9eed0ed; border:2px solid #644520; border-radius:8px; box-shadow:0 4px 0 #614320; line-height:1.25; }
+.preference-card.shovel .preference-label { margin-top:65px; }
+.preference-arrow { flex:0 0 34px; width:34px; height:44px; border:1px solid #b89a6f; border-radius:9px; background:#fff8e8; color:#533a1e; font-size:23px; cursor:pointer; }
+.preference-hint { margin:8px 0 0; color:#77634c; text-align:center; font-size:11px; }
+.preference-selection { min-height:20px; margin:12px 0 0; text-align:center; font-size:12px; font-weight:800; }
+.preference-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:22px; }
+.preference-footer button { min-height:44px; }
+.preference-back { border:0; background:transparent; color:#614a2c; cursor:pointer; }
+.snapshot-card.priority-feature { grid-column:1 / -1; border:2px solid #bc8132; background:linear-gradient(120deg,#fff2cf,#fffaf0); box-shadow:0 7px 18px #9b6a2424; }
+.snapshot-card.priority-feature small { color:#8d5a1f; font-size:10px; }
+.snapshot-card.priority-feature strong { font-size:22px; overflow-wrap:anywhere; }
+@media (prefers-reduced-motion:reduce) { .preference-track,.preference-card { transition:none; } }
 .analytics-badge {
   position: fixed;
   left: 12px;
@@ -2647,7 +2675,7 @@ body.mobile-experience .quarry-scroll-cue {
     <div class="device-inner">
       <div class="onboarding-step">STEP 00 · EXPERIENCE</div>
       <h2>どの画面で採掘する？</h2>
-      <p class="device-lead">最初に表示モードを選んでください。スマホ版はタッチ操作と縦画面向けに最適化しています。選択後に志望業界アンケートへ進みます。</p>
+      <p class="device-lead">最初に表示モードを選んでください。選んだあと、見やすい企業情報にするための質問が2つあります。</p>
       <div class="device-grid">
         <button class="device-choice" id="chooseBrowserMode" type="button">
           <span class="device-tag">CURRENT</span>
@@ -2667,28 +2695,19 @@ body.mobile-experience .quarry-scroll-cue {
 
   <dialog class="onboarding-dialog" id="onboardingDialog">
     <form class="onboarding-inner" id="onboardingForm">
-      <div class="onboarding-step">STEP 01 · DISCOVERY PROFILE</div>
-      <h2>いま興味がある業界は？</h2>
-      <p class="onboarding-lead">複数選択できます。最初の興味と、実際に掘った企業の違いをもとに発見体験を改善します。</p>
-
-      <div class="survey-options" id="surveyIndustryOptions"></div>
-
-      <div class="survey-divider"></div>
-
-      <label class="survey-option wide">
-        <input type="checkbox" id="surveyNoPreference">
-        <span>まだ特に決まっていない</span>
-      </label>
-
-      <div class="survey-error" id="surveyError"></div>
-
-      <div class="survey-footer">
-        <div class="survey-privacy">
-          サービス改善のため、匿名のアンケート回答・採掘位置・企業の発見/閲覧/保存などの操作データを収集します。
-          氏名・メールアドレスはこのアンケートでは収集しません。
-        </div>
-        <button class="black-btn button-height" type="submit">採掘をはじめる</button>
-      </div>
+      <div class="onboarding-step" id="preferenceStep">STEP 01 · PROFILE</div>
+      <div class="preference-progress" aria-hidden="true"><span class="done"></span><span id="preferenceProgress2"></span></div>
+      <section class="preference-stage" id="occupationStage">
+        <h2>職業は？</h2>
+        <div class="preference-carousel"><button class="preference-arrow" type="button" data-carousel="occupation" data-direction="-1" aria-label="前の職業">‹</button><div class="preference-viewport" id="occupationViewport" aria-label="職業を選ぶ"><div class="preference-track" id="occupationTrack"></div></div><button class="preference-arrow" type="button" data-carousel="occupation" data-direction="1" aria-label="次の職業">›</button></div>
+        <p class="preference-hint">左右にスワイプして選んでね</p><p class="preference-selection" id="occupationSelection" aria-live="polite"></p>
+      </section>
+      <section class="preference-stage" id="priorityStage" hidden>
+        <h2>優先度は？</h2>
+        <div class="preference-carousel"><button class="preference-arrow" type="button" data-carousel="priority" data-direction="-1" aria-label="前の優先項目">‹</button><div class="preference-viewport" id="priorityViewport" aria-label="重視する項目を選ぶ"><div class="preference-track" id="priorityTrack"></div></div><button class="preference-arrow" type="button" data-carousel="priority" data-direction="1" aria-label="次の優先項目">›</button></div>
+        <p class="preference-hint">いちばん気になる鉱石を選んでね</p><p class="preference-selection" id="prioritySelection" aria-live="polite"></p>
+      </section>
+      <div class="preference-footer"><button type="button" class="preference-back" id="preferenceBack" hidden>戻る</button><button class="black-btn button-height" id="preferenceNext" type="submit">次へ</button></div>
     </form>
   </dialog>
   <div class="analytics-badge" id="analyticsBadge">ANALYTICS NOT CONNECTED</div>
@@ -2715,7 +2734,7 @@ const ANALYTICS_CONFIG = {
 
 const ANALYTICS_SESSION_KEY = "vi-analytics-session-v1";
 const ONBOARDING_KEY = "vi-onboarding-complete-v1";
-const SURVEY_LOCAL_KEY = "vi-survey-response-v1";
+const PREFERENCE_KEY = "vi-preference-profile-v1";
 
 function makeAnalyticsSessionId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -2800,87 +2819,103 @@ async function analyticsFlush(keepalive = false) {
   }
 }
 
-async function analyticsSubmitSurvey(interestedIndustries, noPreference) {
-  localStorage.setItem(SURVEY_LOCAL_KEY, JSON.stringify({
-    interested_industries: interestedIndustries,
-    no_preference: noPreference,
-    answered_at: new Date().toISOString()
-  }));
-
-  await analyticsPost("survey_responses", [{
-    session_id: analyticsSessionId,
-    interested_industries: interestedIndustries,
-    no_preference: noPreference
-  }]);
-
-  analyticsTrack("survey_submitted", {
-    metadata: {
-      interested_industries: interestedIndustries,
-      no_preference: noPreference
-    }
-  });
-}
-
 function setupOnboardingSurvey() {
   const dialog = document.getElementById("onboardingDialog");
   const form = document.getElementById("onboardingForm");
-  const options = document.getElementById("surveyIndustryOptions");
-  const noPreference = document.getElementById("surveyNoPreference");
-  const error = document.getElementById("surveyError");
-
-  if (!dialog || !form || !options || !noPreference || !error) return;
-
-  options.innerHTML = industries.map(industry => `
-    <label class="survey-option">
-      <input type="checkbox" name="survey-industry" value="${industry}">
-      <span>${industry}</span>
-    </label>
-  `).join("");
-
-  const industryChecks =
-    [...options.querySelectorAll('input[name="survey-industry"]')];
-
-  noPreference.addEventListener("change", () => {
-    if (noPreference.checked) {
-      industryChecks.forEach(input => input.checked = false);
-    }
-    error.textContent = "";
-  });
-
-  industryChecks.forEach(input => {
-    input.addEventListener("change", () => {
-      if (input.checked) noPreference.checked = false;
-      error.textContent = "";
+  if (!dialog || !form) return;
+  const choices = {
+    occupation: ["高校生", "大学生", "大学院生", "専門学校生", "社会人", "その他"],
+    priority: ["給与", "仕事内容", "働き方", "福利厚生", "企業の安定性", "成長環境"]
+  };
+  const selected = { occupation: 0, priority: 0 };
+  let stage = "occupation";
+  function select(kind, index) {
+    const track = document.getElementById(`${kind}Track`);
+    const viewport = document.getElementById(`${kind}Viewport`);
+    selected[kind] = Math.max(0, Math.min(choices[kind].length - 1, index));
+    const card = track.children[selected[kind]];
+    track.style.transform = `translateX(${-card.offsetLeft + (viewport.clientWidth - card.offsetWidth) / 2}px)`;
+    [...track.children].forEach((item, i) => {
+      item.classList.toggle("current", i === selected[kind]);
+      item.setAttribute("aria-pressed", String(i === selected[kind]));
     });
-  });
-
-  form.addEventListener("submit", async (event) => {
+    document.getElementById(`${kind}Selection`).textContent = choices[kind][selected[kind]];
+  }
+  for (const kind of ["occupation", "priority"]) {
+    const track = document.getElementById(`${kind}Track`);
+    const viewport = document.getElementById(`${kind}Viewport`);
+    track.innerHTML = choices[kind].map((name, i) => `<button class="preference-card ${kind === "occupation" ? "shovel" : "ore"}" type="button" aria-pressed="${i === 0}"><span class="preference-figure"><span class="preference-label">${name}</span></span></button>`).join("");
+    let suppressClick = false;
+    track.addEventListener("click", event => {
+      if (suppressClick) { event.preventDefault(); event.stopPropagation(); suppressClick = false; }
+    }, true);
+    [...track.children].forEach((card, i) => card.addEventListener("click", () => select(kind, i)));
+    let origin = null;
+    viewport.addEventListener("pointerdown", event => { origin = event.clientX; suppressClick = false; });
+    viewport.addEventListener("pointermove", event => {
+      if (origin === null || Math.abs(event.clientX - origin) < 5) return;
+      track.classList.add("dragging");
+      const card = track.children[selected[kind]];
+      const center = -card.offsetLeft + (viewport.clientWidth - card.offsetWidth) / 2;
+      track.style.transform = `translateX(${center + event.clientX - origin}px)`;
+    });
+    viewport.addEventListener("pointerup", event => {
+      if (origin === null) return;
+      const delta = event.clientX - origin;
+      origin = null;
+      track.classList.remove("dragging");
+      if (Math.abs(delta) > 32) { suppressClick = true; select(kind, selected[kind] + (delta < 0 ? 1 : -1)); }
+      else select(kind, selected[kind]);
+    });
+    viewport.addEventListener("pointercancel", () => { origin = null; track.classList.remove("dragging"); select(kind, selected[kind]); });
+    viewport.addEventListener("keydown", event => {
+      if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+        event.preventDefault(); select(kind, selected[kind] + (event.key === "ArrowRight" ? 1 : -1));
+        track.children[selected[kind]].focus();
+      }
+    });
+  }
+  document.querySelectorAll("[data-carousel]").forEach(button => button.addEventListener("click", () => {
+    const kind = button.dataset.carousel;
+    select(kind, selected[kind] + Number(button.dataset.direction));
+  }));
+  const back = document.getElementById("preferenceBack");
+  const next = document.getElementById("preferenceNext");
+  function showStage(kind) {
+    stage = kind;
+    document.getElementById("occupationStage").hidden = kind !== "occupation";
+    document.getElementById("priorityStage").hidden = kind !== "priority";
+    document.getElementById("preferenceStep").textContent = kind === "occupation" ? "STEP 01 · PROFILE" : "STEP 02 · PRIORITY";
+    document.getElementById("preferenceProgress2").classList.toggle("done", kind === "priority");
+    back.hidden = kind === "occupation";
+    next.textContent = kind === "occupation" ? "次へ" : "採掘をはじめる";
+    requestAnimationFrame(() => select(kind, selected[kind]));
+  }
+  back.addEventListener("click", () => showStage("occupation"));
+  dialog.addEventListener("cancel", event => event.preventDefault());
+  dialog.addEventListener("preference-open", () => requestAnimationFrame(() => select(stage, selected[stage])));
+  form.addEventListener("submit", event => {
     event.preventDefault();
-
-    const selected = industryChecks
-      .filter(input => input.checked)
-      .map(input => input.value);
-
-    if (!selected.length && !noPreference.checked) {
-      error.textContent =
-        "1つ以上選ぶか、「まだ特に決まっていない」を選んでください。";
-      return;
-    }
-
+    if (stage === "occupation") { showStage("priority"); return; }
+    const occupation = choices.occupation[selected.occupation];
+    const priority = choices.priority[selected.priority];
+    localStorage.setItem(PREFERENCE_KEY, JSON.stringify({ occupation, priority }));
     localStorage.setItem(ONBOARDING_KEY, "1");
     dialog.close();
-
-    analyticsSubmitSurvey(selected, noPreference.checked);
-    showToast("回答ありがとう。採掘をはじめよう");
+    analyticsTrack("preference_submitted", { metadata: { occupation, priority } });
   });
-
+  window.addEventListener("resize", () => select(stage, selected[stage]));
+  showStage("occupation");
 }
 
 function showSurveyIfNeeded() {
   const dialog = document.getElementById("onboardingDialog");
-  if (!dialog || localStorage.getItem(ONBOARDING_KEY)) return;
+  if (!dialog || localStorage.getItem(PREFERENCE_KEY)) return;
   requestAnimationFrame(() => {
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) {
+      dialog.showModal();
+      dialog.dispatchEvent(new Event("preference-open"));
+    }
   });
 }
 
@@ -4407,16 +4442,29 @@ function applyVerifiedProfile(company, profile) {
   const business = window.VICompanyData.point(profile, "business_description");
   if (business) document.getElementById("dialogSummary").textContent = business.display_value;
 
+  let priority = "";
+  try { priority = JSON.parse(localStorage.getItem(PREFERENCE_KEY) || "null")?.priority || ""; } catch (_) { /* Ignore invalid saved answers. */ }
+  const priorityFields = {
+    "給与": ["base_salary","starting_salary","average_salary","compensation_policy"],
+    "仕事内容": ["main_business","career_program","business_description"],
+    "働き方": ["annual_holidays","remote_work","average_overtime","workstyle_overview"],
+    "福利厚生": ["housing_allowance","training_program","benefits_other"],
+    "企業の安定性": ["revenue","operating_income","performance_summary","employee_count"],
+    "成長環境": ["career_program","training_program","growth_rate"]
+  };
+  const featured = (priorityFields[priority] || []).map(field => window.VICompanyData.point(profile, field)).find(Boolean);
   const snapshotFields = ["base_salary","starting_salary","annual_holidays","employee_count_consolidated","employee_count","revenue"];
   const seen = new Set();
+  if (featured) seen.add(featured.field_name);
   const snapshots = [];
   for (const field of snapshotFields) {
     const p = window.VICompanyData.point(profile, field);
-    if (!p || seen.has(p.field_name) || snapshots.length >= 4) continue;
+    if (!p || seen.has(p.field_name) || snapshots.length >= (priority ? 3 : 4)) continue;
     seen.add(p.field_name);
     snapshots.push(p);
   }
-  els.snapshotGrid.innerHTML = snapshots.map(p => {
+  const featuredHtml = priority ? `<div class="snapshot-card priority-feature"><small>あなたが重視する「${viEsc(priority)}」 · ${featured ? viEsc(window.VICompanyData.fieldMeta[featured.field_name]?.[1] || featured.field_name) : "公式情報"}</small><strong>${featured ? viEsc(featured.display_value) : "公式情報はまだ確認できません"}</strong><span>${featured ? viEsc(verifiedSourceLabel(featured.source_type)) : "確認済みの別の項目は下に表示しています"}</span></div>` : "";
+  els.snapshotGrid.innerHTML = featuredHtml + snapshots.map(p => {
     const meta = window.VICompanyData.fieldMeta[p.field_name];
     return `<div class="snapshot-card"><small>${viEsc(meta ? meta[1] : p.field_name)}</small><strong>${viEsc(p.display_value)}</strong><span>${viEsc(verifiedSourceLabel(p.source_type))}</span></div>`;
   }).join("");
@@ -4441,7 +4489,8 @@ function applyVerifiedProfile(company, profile) {
     banner.className = "official-data-banner verified-data-banner";
     banner.textContent = `VERIFIED PUBLIC DATA · ${q.verifiedFields}項目 · HIGH CONFIDENCE ONLY · 根拠のない項目は表示していません`;
   }
-  renderVerifiedDetail(company, groups[0].key);
+  const featuredGroup = featured && window.VICompanyData.fieldMeta[featured.field_name]?.[0];
+  renderVerifiedDetail(company, groups.some(g => g.key === featuredGroup) ? featuredGroup : groups[0].key);
 }
 
 function renderVerifiedUnavailable(company, summary, message) {
