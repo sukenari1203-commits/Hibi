@@ -2,82 +2,136 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
 
 const game=document.getElementById('game');
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.65));
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.7));
 renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled=true;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.setClearColor(0xa9aaa1,1);
+renderer.domElement.style.touchAction='none';
 game.appendChild(renderer.domElement);
 
 const scene=new THREE.Scene();
-scene.fog=new THREE.FogExp2(0xb9c1bd,.0068);
-scene.add(new THREE.HemisphereLight(0xe2e8e3,0x34372f,1.65));
-const sun=new THREE.DirectionalLight(0xffefcf,2.5);sun.position.set(-45,70,-32);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-70;sun.shadow.camera.right=70;sun.shadow.camera.top=70;sun.shadow.camera.bottom=-70;scene.add(sun);
+scene.fog=new THREE.FogExp2(0xb8b5a9,.0047);
+scene.add(new THREE.HemisphereLight(0xdce2dc,0x403b32,1.65));
+const sun=new THREE.DirectionalLight(0xffe9c8,2.35);
+sun.position.set(-60,80,15);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-110;sun.shadow.camera.right=110;sun.shadow.camera.top=85;sun.shadow.camera.bottom=-85;scene.add(sun);
 
-const camera=new THREE.PerspectiveCamera(39,innerWidth/innerHeight,.1,240);
-const camTarget=new THREE.Vector3(0,0,4);camera.position.set(48,46,60);camera.lookAt(camTarget);
-const palette={snow:0xc7cbc5,road:0x6c665b,wood:0x66533d,steel:0x50595a,olive:0x58634b,brick:0x6a5548};
-const box=(w,h,d,color,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:.92}));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m};
+const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.1,320);
+const SCREEN={station:-50,depot:38};
+let view='depot',camX=SCREEN.depot,camGoal=SCREEN.depot;
+function updateCamera(){camera.position.set(camX+32,40,48);camera.lookAt(camX,0,1)}
+updateCamera();
 
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(104,96,10,10).rotateX(-Math.PI/2),new THREE.MeshStandardMaterial({color:palette.snow,roughness:1}));ground.receiveShadow=true;scene.add(ground);
-const base=new THREE.Mesh(new THREE.BoxGeometry(106,2.2,98),new THREE.MeshStandardMaterial({color:0x4b4a43,roughness:1}));base.position.y=-1.2;base.receiveShadow=true;scene.add(base);
-box(8,.08,86,palette.road,-9,.06,0);box(104,.12,7,0x4c4941,0,.08,-28);for(let x=-50;x<=50;x+=2.6)box(.18,.18,7,0x4d3928,x,.16,-28);for(const z of [-29.55,-26.45])box(104,.13,.16,0x424647,0,.28,z);
+const mat=(color,roughness=.9,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
+const M={ground:mat(0xaaa89c,1),road:mat(0x57544d,1),rail:mat(0x393d3c,.55,.35),wood:mat(0x5c4936,.95),olive:mat(0x58624d,.9),dark:mat(0x2d3331,.82),steel:mat(0x4d5554,.7,.28),red:mat(0x74463f,.9),roof:mat(0x383d3c,.8),crate:mat(0x765b3d,.95),canvas:mat(0x7a765f,.98)};
+function mesh(geo,material,x=0,y=0,z=0,parent=scene){const o=new THREE.Mesh(geo,material);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
+function box(w,h,d,material,x=0,y=0,z=0,parent=scene){return mesh(new THREE.BoxGeometry(w,h,d),material,x,y,z,parent)}
+function cyl(rt,rb,h,seg,material,x=0,y=0,z=0,parent=scene){return mesh(new THREE.CylinderGeometry(rt,rb,h,seg),material,x,y,z,parent)}
 
-const worldLabels=[];
-function addWorldLabel(title,pos,subFn){const el=document.createElement('div');el.className='world-label';el.innerHTML=`${title}<small></small>`;document.getElementById('worldLabels').appendChild(el);worldLabels.push({el,pos,subFn});return el}
-function building(x,z,w,d,h,label){const g=new THREE.Group();const body=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:palette.wood,roughness:.98}));body.position.y=h/2;body.castShadow=true;g.add(body);const roof=new THREE.Mesh(new THREE.BoxGeometry(w+1,.4,d+1),new THREE.MeshStandardMaterial({color:0x404746,roughness:.85}));roof.position.y=h+.18;roof.castShadow=true;g.add(roof);g.position.set(x,0,z);scene.add(g);addWorldLabel(label,new THREE.Vector3(x,h+1.2,z));return g}
-building(-36,-11,15,12,5,'物資倉庫');building(33,-10,14,11,5,'整備庫');building(-36,13,14,12,4.7,'兵員待機所');building(31,13,14,12,4.7,'車両ヤード');
+const ground=mesh(new THREE.PlaneGeometry(210,86).rotateX(-Math.PI/2),M.ground,0,0,0);ground.receiveShadow=true;
+box(212,2.2,88,mat(0x4b4942,1),0,-1.25,0);
+box(205,.12,10,M.road,0,.07,8);
+for(let x=-102;x<103;x+=6){box(2.4,.08,8,mat(0x646058,1),x,.13,8)}
+for(let x=-102;x<=102;x+=2.7)box(.17,.16,7.4,M.wood,x,.15,-23);
+for(const z of [-24.55,-21.45])box(205,.14,.18,M.rail,0,.28,z);
+box(205,.05,7.8,mat(0x6e6a61,1),0,.04,-23);
 
-for(const [x,z,s] of [[-38,35,1],[-20,42,.9],[3,36,1.2],[23,43,.8],[40,34,1]]){const ruin=new THREE.Group();for(let i=0;i<5;i++){const b=new THREE.Mesh(new THREE.BoxGeometry((3+Math.random()*3)*s,(1.5+Math.random()*4)*s,(2+Math.random()*2)*s),new THREE.MeshStandardMaterial({color:palette.brick,roughness:1}));b.position.set((Math.random()-.5)*5,b.geometry.parameters.height/2,(Math.random()-.5)*4);b.rotation.y=(Math.random()-.5)*.4;ruin.add(b)}ruin.position.set(x,0,z);scene.add(ruin)}
-const frontActors=[];for(let i=0;i<22;i++){const g=new THREE.Group();const body=new THREE.Mesh(new THREE.BoxGeometry(.26,.55,.22),new THREE.MeshStandardMaterial({color:i%2?0x59634e:0x6c6654}));body.position.y=.48;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.12,6,5),new THREE.MeshStandardMaterial({color:0x9d8065}));head.position.y=.88;g.add(head);g.position.set(-42+Math.random()*84,0,27+Math.random()*18);g.userData.phase=Math.random()*6.28;g.userData.side=i%2?1:-1;scene.add(g);frontActors.push(g)}
-for(const [x,z,flip] of [[-27,36,1],[15,31,-1],[35,41,-1]]){const t=new THREE.Group();const hull=new THREE.Mesh(new THREE.BoxGeometry(3,.75,1.8),new THREE.MeshStandardMaterial({color:0x545a49}));hull.position.y=.62;t.add(hull);const turret=new THREE.Mesh(new THREE.BoxGeometry(1.35,.55,1.1),new THREE.MeshStandardMaterial({color:0x4b5143}));turret.position.y=1.25;t.add(turret);const gun=new THREE.Mesh(new THREE.BoxGeometry(2.2,.13,.13),new THREE.MeshStandardMaterial({color:0x313632}));gun.position.set(flip*1.3,1.3,0);t.add(gun);t.position.set(x,0,z);scene.add(t)}
+const labels=[];
+function addLabel(text,x,y,z,sub=''){const el=document.createElement('div');el.className='world-label';el.innerHTML=`<strong>${text}</strong>${sub?`<span>${sub}</span>`:''}`;document.getElementById('worldLabels').appendChild(el);labels.push({el,p:new THREE.Vector3(x,y,z)});return el}
+function updateLabels(){for(const l of labels){const p=l.p.clone().project(camera);const visible=p.z<1&&Math.abs(p.x)<1.25&&Math.abs(p.y)<1.3;l.el.style.display=visible?'block':'none';if(!visible)continue;l.el.style.left=`${(p.x*.5+.5)*innerWidth}px`;l.el.style.top=`${(-p.y*.5+.5)*innerHeight}px`}}
 
-const stations=[];
-function addStation(id,label,x,z,recipe,color){const group=new THREE.Group();const bench=new THREE.Mesh(new THREE.BoxGeometry(6,1.05,4.2),new THREE.MeshStandardMaterial({color:palette.steel,roughness:.85}));bench.position.y=.55;bench.castShadow=true;group.add(bench);const top=new THREE.Mesh(new THREE.BoxGeometry(5.5,.12,3.7),new THREE.MeshStandardMaterial({color,roughness:.8}));top.position.y=1.12;group.add(top);for(let i=0;i<3;i++){const tool=new THREE.Mesh(new THREE.BoxGeometry(.65,.38,.45),new THREE.MeshStandardMaterial({color:0x343a38}));tool.position.set(-1.7+i*1.7,1.38,(i%2-.5)*1.4);group.add(tool)}group.position.set(x,0,z);scene.add(group);const st={id,label,group,pos:new THREE.Vector3(x,0,z),recipe,input:{},progress:0,processing:false,output:null,color};stations.push(st);addWorldLabel(label,new THREE.Vector3(x,2.6,z),()=>stationSubtitle(st));return st}
-const rifleStation=addStation('rifle','小銃分隊 編成所',-18,-8,{personnel:1,rifles:1,ammo:1},0x7f845f);
-const mgStation=addStation('mg','機関銃班 編成所',2,-8,{personnel:1,mg:1,tripod:1,ammo:1},0x7b6c55);
-const mortarStation=addStation('mortar','迫撃砲班 編成所',-18,9,{personnel:1,mortar:1,shells:1},0x6d766f);
-const tankStation=addStation('tank','戦車 戦闘準備所',4,9,{tank:1,personnel:1,fuel:1,shells:1},0x666e52);
+function building(x,z,w,d,h,wall=M.red,label=''){const g=new THREE.Group();box(w,h,d,wall,0,h/2,0,g);box(w+1,.45,d+1,M.roof,0,h+.12,0,g);for(let i=-1;i<=1;i++){box(1.2,1.5,.12,M.dark,i*w*.24,1.8,-d/2-.07,g)}g.position.set(x,0,z);scene.add(g);if(label)addLabel(label,x,h+1.4,z);return g}
 
-const TYPE={personnel:{label:'兵員',color:0x59634e},rifles:{label:'小銃梱包',color:0x725840},ammo:{label:'小銃弾薬',color:0x7e744c},mg:{label:'機関銃',color:0x494f4a},tripod:{label:'三脚',color:0x5f5b4d},mortar:{label:'迫撃砲',color:0x545d58},shells:{label:'迫撃砲弾',color:0x6e6948},fuel:{label:'燃料',color:0x765848},tank:{label:'戦車車体',color:0x4f5b49},rifle_squad:{label:'小銃分隊',color:0x889768,prepared:true},mg_team:{label:'機関銃班',color:0x8b795b,prepared:true},mortar_team:{label:'迫撃砲班',color:0x78857a,prepared:true},tank_ready:{label:'戦車1両',color:0x65765b,prepared:true}};
-const stationOutput={rifle:'rifle_squad',mg:'mg_team',mortar:'mortar_team',tank:'tank_ready'};
-function stationSubtitle(st){if(st.output)return `${TYPE[st.output].label} 完成`;if(st.processing)return `準備中 ${Math.round(st.progress*100)}%`;return Object.entries(st.recipe).map(([k,n])=>`${TYPE[k].label} ${st.input[k]||0}/${n}`).join(' · ')}
+building(-69,-11,18,11,5.7,M.red,'貨物駅');
+box(34,.35,8,mat(0x77736b,1),-58,.18,-16);
+for(let x=-74;x<=-43;x+=5)box(.35,3.6,.35,M.steel,x,1.8,-13.5);
+box(32,.26,.4,M.steel,-58,3.55,-13.5);
+addLabel('貨物列車',-59,5,-22,'箱をドラッグしてトラックへ');
+addLabel('駅側トラック駐車場',-48,3.2,8,'最大3箱・積載後自動発車');
 
-const rallyPos=new THREE.Vector3(22,0,22);box(16,.14,10,0x77725e,22,.09,22);for(let x=15;x<=29;x+=2){box(.12,1.2,.12,0x4c4c44,x,.6,17.4);box(.12,1.2,.12,0x4c4c44,x,.6,26.6)}
-const signalPos=new THREE.Vector3(-1,0,22);box(6,1.1,4.5,0x4c5351,-1,.55,22);box(1.2,2.3,1.2,0x363c3b,-1,1.7,22);
-const rallyNeed={rifle_squad:2,mg_team:1,mortar_team:1,tank_ready:1},rallyHave={};let rallyReady=false,companyCount=0,frontStatus=72;
-addWorldLabel('中隊 集合地点',new THREE.Vector3(22,2,22),()=>rallyReady?'編成完了 · 指揮所へ':'部隊をここへ運べ');addWorldLabel('指揮所 / 号令',new THREE.Vector3(-1,3.7,22),()=>rallyReady?'E：前進命令':'中隊編成待ち');
+building(61,-6,17,13,5.4,M.canvas,'補給倉庫');
+const assembly=new THREE.Group();
+const aring=mesh(new THREE.RingGeometry(7.4,7.8,48).rotateX(-Math.PI/2),mat(0xb7a96b,.8),0,.09,0,assembly);aring.receiveShadow=true;
+for(let i=0;i<6;i++){const a=i/6*Math.PI*2;box(.25,1.35,.25,M.steel,Math.cos(a)*7.6,.68,Math.sin(a)*7.6,assembly)}
+assembly.position.set(18,0,10);scene.add(assembly);addLabel('集合地点',18,2.5,10,'後で分隊編成に使用');
 
-const train=new THREE.Group();function trainCar(x,w,color){const g=new THREE.Group();const car=new THREE.Mesh(new THREE.BoxGeometry(w,2.5,4.5),new THREE.MeshStandardMaterial({color,roughness:.82}));car.position.y=1.7;car.castShadow=true;g.add(car);for(const dx of [-w*.3,w*.3])for(const zz of [-1.55,1.55]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,.28,10),new THREE.MeshStandardMaterial({color:0x242727,metalness:.4}));wheel.rotation.x=Math.PI/2;wheel.position.set(dx,.46,zz);g.add(wheel)}g.position.x=x;train.add(g)}trainCar(0,7,0x3b4543);trainCar(-8,7,0x65533e);trainCar(-16,7,0x66523e);trainCar(-24,7,0x5d4c3c);train.position.set(-68,0,-28);scene.add(train);let trainPhase='arriving',trainTimer=0,cargoSpawned=false;addWorldLabel('鉄道荷下ろし場',new THREE.Vector3(-15,3.2,-24));
+const storageBase=box(18,.18,13,mat(0x726c58,1),58,.1,10);storageBase.userData.zone='storage';
+for(let x=51.5;x<=64.5;x+=4.2)for(let z=6.5;z<=13.5;z+=3.5){const p=new THREE.Group();for(let i=-1;i<=1;i++)box(3.1,.18,.42,M.wood,0,.12,i*.95,p);p.position.set(x,.15,z);scene.add(p)}
+addLabel('荷物置き場',58,3.2,10,'箱を置いてタップで開封');
+addLabel('補給所トラック駐車場',36,3.2,8,'ここで荷下ろし');
 
-const crates=[];let crateSeq=0;
-function createCrate(type,x,z){const def=TYPE[type],large=type==='tank',mesh=new THREE.Group();if(large){const hull=new THREE.Mesh(new THREE.BoxGeometry(3.2,.9,2),new THREE.MeshStandardMaterial({color:def.color,roughness:.9}));hull.position.y=.72;mesh.add(hull);const turret=new THREE.Mesh(new THREE.BoxGeometry(1.5,.55,1.2),new THREE.MeshStandardMaterial({color:0x465143}));turret.position.y=1.4;mesh.add(turret)}else{const c=new THREE.Mesh(new THREE.BoxGeometry(1.15,.82,.9),new THREE.MeshStandardMaterial({color:def.color,roughness:.95}));c.position.y=.48;c.castShadow=true;mesh.add(c);const band=new THREE.Mesh(new THREE.BoxGeometry(1.22,.09,.96),new THREE.MeshStandardMaterial({color:0x343530,roughness:.8}));band.position.y=.56;mesh.add(band)}mesh.position.set(x,0,z);scene.add(mesh);const item={id:++crateSeq,type,mesh,carried:false};crates.push(item);return item}
-function spawnCargoBatch(){const manifest=['personnel','personnel','personnel','personnel','personnel','rifles','rifles','ammo','ammo','ammo','mg','tripod','mortar','shells','shells','fuel','tank'];manifest.forEach((t,i)=>createCrate(t,-42+(i%6)*3.2,-21+Math.floor(i/6)*2.6));notify('貨物列車到着：荷下ろし開始')}
+for(const [x,z] of [[28,23],[43,22],[70,20]]){const g=new THREE.Group();box(8,2.8,5,M.canvas,0,1.4,0,g);const r1=box(8.6,.22,3,M.roof,0,3.05,-1.1,g);r1.rotation.x=.35;const r2=box(8.6,.22,3,M.roof,0,3.05,1.1,g);r2.rotation.x=-.35;g.position.set(x,0,z);scene.add(g)}
+for(let x=-4;x<=74;x+=13){box(3,.65,.55,M.dark,x,.33,27);box(.35,1.2,.35,M.dark,x-1.3,.6,27);box(.35,1.2,.35,M.dark,x+1.3,.6,27)}
 
-const player=new THREE.Group();const body=new THREE.Mesh(new THREE.BoxGeometry(.75,1.15,.55),new THREE.MeshStandardMaterial({color:0x59634e,roughness:.9}));body.position.y=1.05;body.castShadow=true;player.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.28,8,7),new THREE.MeshStandardMaterial({color:0xa9886b}));head.position.y=1.82;player.add(head);const cap=new THREE.Mesh(new THREE.BoxGeometry(.65,.18,.65),new THREE.MeshStandardMaterial({color:0x474f42}));cap.position.y=2.04;player.add(cap);const pack=new THREE.Mesh(new THREE.BoxGeometry(.55,.72,.28),new THREE.MeshStandardMaterial({color:0x5e5744}));pack.position.set(0,1.04,.42);player.add(pack);player.position.set(-5,0,-1);scene.add(player);let carrying=null;
+const train=new THREE.Group();
+function wheel(x,z,r=.58,parent=train){const w=cyl(r,r,.38,12,M.dark,x,.58,z,parent);w.rotation.x=Math.PI/2;return w}
+function makeLocomotive(){const g=new THREE.Group();box(8,.9,3.6,M.dark,0,.72,0,g);const boiler=cyl(1.25,1.25,5.8,14,M.steel,0,2.05,0,g);boiler.rotation.z=Math.PI/2;boiler.position.x=-.5;box(2.6,3.5,3.4,M.red,3.0,2.15,0,g);box(2.1,.35,3.7,M.roof,3.0,4,0,g);cyl(.42,.62,2.2,10,M.dark,-2.35,4.0,0,g);const lamp=cyl(.18,.18,.35,8,mat(0xd6c27b,.55),-3.55,2.25,0,g);lamp.rotation.z=Math.PI/2;for(const x of [-2.8,-.7,1.5,3.1]){wheel(x,-1.65,.72,g);wheel(x,1.65,.72,g)}return g}
+function makeFreightCar(offset){const g=new THREE.Group();box(10,.75,4.2,M.dark,0,.72,0,g);box(9.5,.3,3.8,M.wood,0,1.25,0,g);for(const z of [-1.9,1.9]){box(9.6,.75,.18,M.steel,0,1.65,z,g);for(const x of [-4.5,0,4.5])box(.18,1.15,.18,M.steel,x,1.5,z,g)}for(const x of [-3.4,3.4]){wheel(x,-1.7,.62,g);wheel(x,1.7,.62,g)}g.position.x=offset;return g}
+train.add(makeLocomotive());train.add(makeFreightCar(-10.8));train.add(makeFreightCar(-21.6));train.add(makeFreightCar(-32.4));train.position.set(-43,0,-23);scene.add(train);
+let trainState='parked',trainTimer=0;
 
-function updateLabels(){const w=innerWidth,h=innerHeight;for(const l of worldLabels){const v=l.pos.clone().project(camera);l.el.style.left=`${(v.x*.5+.5)*w}px`;l.el.style.top=`${(-v.y*.5+.5)*h}px`;l.el.style.display=v.z>1?'none':'block';if(l.subFn)l.el.querySelector('small').textContent=l.subFn()}}
-const keys=new Set();addEventListener('keydown',e=>{keys.add(e.code);if(e.code==='KeyE'&&!e.repeat)interact()});addEventListener('keyup',e=>keys.delete(e.code));
-const companyCountEl=document.getElementById('companyCount'),frontValue=document.getElementById('frontValue'),frontFill=document.getElementById('frontFill'),frontMessage=document.getElementById('frontMessage'),carryText=document.getElementById('carryText'),nearText=document.getElementById('nearText'),recipeList=document.getElementById('recipeList'),companyReady=document.getElementById('companyReady'),toast=document.getElementById('toast'),prompt=document.getElementById('interactPrompt'),promptText=prompt.querySelector('span');
-function notify(t){toast.textContent=t;toast.classList.add('show');clearTimeout(notify.t);notify.t=setTimeout(()=>toast.classList.remove('show'),1300)}
-function recipeUI(){recipeList.innerHTML='';for(const [k,n] of Object.entries(rallyNeed)){const have=rallyHave[k]||0,d=document.createElement('div');d.className='recipe-item'+(have>=n?' done':'');d.innerHTML=`<span>${TYPE[k].label}</span><strong>${have} / ${n}</strong>`;recipeList.appendChild(d)}companyReady.textContent=rallyReady?'編成完了：指揮所で号令可能':'集合地点で編成中';companyReady.classList.toggle('ready',rallyReady)}recipeUI();
-function distXZ(a,b){return Math.hypot(a.x-b.x,a.z-b.z)}
-function stationPrompt(st){if(st.output&&!carrying)return `${TYPE[st.output].label}を受け取る`;if(carrying&&st.recipe[carrying.type])return `${TYPE[carrying.type].label}を投入`;if(st.processing)return '準備中';return st.label}
-function nearestContext(){let best=null,bestD=3.2;for(const c of crates){if(c.carried)continue;const d=distXZ(player.position,c.mesh.position);if(d<bestD){bestD=d;best={kind:'crate',obj:c,label:`${TYPE[c.type].label}を拾う`}}}for(const st of stations){const d=distXZ(player.position,st.pos);if(d<bestD){bestD=d;best={kind:'station',obj:st,label:stationPrompt(st)}}}let d=distXZ(player.position,rallyPos);if(d<bestD){bestD=d;best={kind:'rally',label:carrying&&TYPE[carrying.type]?.prepared?`${TYPE[carrying.type].label}を集合地点へ`:'集合地点'}}d=distXZ(player.position,signalPos);if(d<bestD){best={kind:'signal',label:rallyReady?'前進命令を出す':'編成完了を待つ'}}return best}
-function pickup(item){carrying=item;item.carried=true;notify(`${TYPE[item.type].label}を持った`)}
-function dropCarried(){if(!carrying)return;carrying.carried=false;carrying.mesh.position.set(player.position.x+Math.sin(player.rotation.y)*1.5,0,player.position.z+Math.cos(player.rotation.y)*1.5);carrying=null}
-function consumeCarried(){if(!carrying)return;scene.remove(carrying.mesh);const i=crates.indexOf(carrying);if(i>=0)crates.splice(i,1);carrying=null}
-function makeOutput(st){const type=stationOutput[st.id],out=createCrate(type,st.pos.x,st.pos.z+3);out.mesh.visible=false;out.carried=true;st.output=type;st.outputItem=out;notify(`${TYPE[type].label} 完成`)}
-function startIfReady(st){if(st.processing||st.output)return;for(const [k,n] of Object.entries(st.recipe))if((st.input[k]||0)<n)return;st.processing=true;st.progress=0;notify(`${st.label}：準備開始`)}
-function interact(){const ctx=nearestContext();if(!ctx){if(carrying){dropCarried();notify('地面に置いた')}return}if(ctx.kind==='crate'&&!carrying){pickup(ctx.obj);return}if(ctx.kind==='station'){const st=ctx.obj;if(st.output&&!carrying){const item=st.outputItem;item.mesh.visible=true;item.carried=true;carrying=item;st.output=null;st.outputItem=null;for(const k of Object.keys(st.recipe))st.input[k]=0;notify(`${TYPE[carrying.type].label}を受け取った`);return}if(carrying&&st.recipe[carrying.type]){const type=carrying.type;st.input[type]=(st.input[type]||0)+1;consumeCarried();notify(`${TYPE[type].label} 投入`);startIfReady(st);return}}if(ctx.kind==='rally'&&carrying&&TYPE[carrying.type]?.prepared){const type=carrying.type;if(rallyNeed[type]){rallyHave[type]=(rallyHave[type]||0)+1;consumeCarried();notify(`${TYPE[type].label} 集合`);rallyReady=Object.entries(rallyNeed).every(([k,n])=>(rallyHave[k]||0)>=n);recipeUI();return}}if(ctx.kind==='signal'&&rallyReady){dispatchCompany();return}if(carrying){dropCarried();notify('地面に置いた')}}
+function makeTruck(){const g=new THREE.Group();box(8,.5,3.5,M.dark,0,.72,0,g);box(3,2.5,3.2,M.olive,2.25,2.0,0,g);box(2.4,1.05,3.1,M.olive,4.5,1.45,0,g);box(4.3,.24,3.25,M.wood,-1.55,1.45,0,g);for(const z of [-1.55,1.55]){for(const x of [-2.5,2.8])wheelTruck(x,z,g)}box(1.5,.55,.12,mat(0x9ba39e,.35,.12),2.45,2.35,-1.63,g);box(1.5,.55,.12,mat(0x9ba39e,.35,.12),2.45,2.35,1.63,g);return g}
+function wheelTruck(x,z,parent){const w=cyl(.72,.72,.42,12,M.dark,x,.72,z,parent);w.rotation.x=Math.PI/2}
+const truck={group:makeTruck(),state:'station',cargo:[],departureAt:0,returnAt:0,speed:11};truck.group.position.set(-48,0,8);scene.add(truck.group);
 
-function createConvoy(){const g=new THREE.Group();const tank=new THREE.Mesh(new THREE.BoxGeometry(3,.8,1.8),new THREE.MeshStandardMaterial({color:0x59634e}));tank.position.set(0,.65,0);g.add(tank);for(let j=0;j<2;j++){const truck=new THREE.Mesh(new THREE.BoxGeometry(2.4,1.4,1.5),new THREE.MeshStandardMaterial({color:0x64654f}));truck.position.set(-3.5-j*3,.8,0);g.add(truck)}for(let i=0;i<8;i++){const s=new THREE.Mesh(new THREE.BoxGeometry(.25,.6,.22),new THREE.MeshStandardMaterial({color:0x59634e}));s.position.set(-3-(i%4)*.55,1.8+(i>3?.1:0),(i%2-.5)*.6);g.add(s)}g.position.set(22,0,22);scene.add(g);return g}
-const convoys=[];function dispatchCompany(){rallyReady=false;companyCount++;companyCountEl.textContent=`${companyCount} 中隊`;for(const k of Object.keys(rallyHave))rallyHave[k]=0;recipeUI();frontStatus=Math.min(100,frontStatus+21);notify(`第${companyCount}増強中隊：前進！`);convoys.push({mesh:createConvoy(),t:0})}
-function updateTrain(dt){trainTimer+=dt;if(trainPhase==='arriving'){train.position.x+=dt*7.5;if(train.position.x>=12){train.position.x=12;trainPhase='stopped';trainTimer=0;if(!cargoSpawned){spawnCargoBatch();cargoSpawned=true}}}else if(trainPhase==='stopped'){if(trainTimer>13){trainPhase='leaving';trainTimer=0}}else if(trainPhase==='leaving'){train.position.x+=dt*9;if(train.position.x>72){train.position.x=-68;trainPhase='arriving';trainTimer=0;cargoSpawned=false}}}
-function updateStations(dt){for(const st of stations)if(st.processing){st.progress=Math.min(1,st.progress+dt/(st.id==='tank'?5.5:3.5));st.group.children[1].scale.x=.92+.12*Math.sin(performance.now()*.015);if(st.progress>=1){st.processing=false;st.progress=0;st.group.children[1].scale.x=1;makeOutput(st)}}}
-function updateConvoys(dt){for(let i=convoys.length-1;i>=0;i--){const c=convoys[i];c.mesh.position.z+=dt*5.8;c.mesh.position.x-=dt*.55;if(c.mesh.position.z>49){scene.remove(c.mesh);convoys.splice(i,1)}}}
-function updateFront(dt,now){frontStatus=Math.max(0,frontStatus-dt*.16);frontValue.textContent=`${Math.round(frontStatus)}%`;frontFill.style.width=`${frontStatus}%`;frontFill.style.background=frontStatus<30?'#b96255':'linear-gradient(90deg,#9cad7f,#d5c27c)';frontMessage.textContent=frontStatus<35?'前線崩壊寸前：増援急げ':frontStatus<60?'損耗拡大：増援要請':'前線から増援要請';for(const a of frontActors){a.position.x+=Math.sin(now*.001+a.userData.phase)*dt*.2*a.userData.side;a.rotation.y+=Math.sin(now*.0007+a.userData.phase)*dt*.08}}
-function movePlayer(dt){let x=0,z=0;if(keys.has('KeyW')||keys.has('ArrowUp'))z+=1;if(keys.has('KeyS')||keys.has('ArrowDown'))z-=1;if(keys.has('KeyA')||keys.has('ArrowLeft'))x-=1;if(keys.has('KeyD')||keys.has('ArrowRight'))x+=1;if(x||z){const len=Math.hypot(x,z);x/=len;z/=len;const sp=(keys.has('ShiftLeft')||keys.has('ShiftRight')?10.5:7.1)*dt;player.position.x+=x*sp;player.position.z+=z*sp;player.rotation.y=Math.atan2(x,z);body.position.y=1.05+Math.abs(Math.sin(performance.now()*.012))*.05}else body.position.y=1.05;player.position.x=THREE.MathUtils.clamp(player.position.x,-48,48);player.position.z=THREE.MathUtils.clamp(player.position.z,-23,29);if(carrying){carrying.mesh.visible=true;carrying.mesh.position.set(player.position.x,2.6,player.position.z);carrying.mesh.rotation.y=player.rotation.y}}
-function updateHud(){carryText.textContent=carrying?TYPE[carrying.type].label:'手ぶら';const ctx=nearestContext();nearText.textContent=ctx?ctx.label:(carrying?'E：地面に置く':'物資に近づいて E');if(ctx){prompt.classList.add('show');promptText.textContent=ctx.label}else prompt.classList.remove('show')}
-let last=performance.now();function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;movePlayer(dt);updateTrain(dt);updateStations(dt);updateConvoys(dt);updateFront(dt,now);updateHud();updateLabels();renderer.render(scene,camera)}
-if(!(matchMedia('(pointer:fine)').matches&&innerWidth>=900)){const h=document.getElementById('pcHint');h.classList.add('active');setTimeout(()=>h.classList.remove('active'),4500)}addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});requestAnimationFrame(loop);
+const TYPES={rifle:{label:'小銃箱',short:'小銃',paint:0x6e563a,mark:0xc7b46d},ammo:{label:'弾薬箱',short:'弾薬',paint:0x596044,mark:0xd1c477},grenade:{label:'グレネード箱',short:'グレネード',paint:0x4b5650,mark:0xb4c2a6}};
+const crates=[];let crateId=0;
+function makeCrate(type){const def=TYPES[type],g=new THREE.Group();box(1.75,1.15,1.35,mat(def.paint,.98),0,.62,0,g);for(const x of [-.7,.7])box(.13,1.2,1.42,M.dark,x,.64,0,g);for(const z of [-.55,.55])box(1.82,.13,.13,M.dark,0,1.03,z,g);const plate=box(.78,.34,.06,mat(def.mark,.82),0,.72,-.705,g);plate.castShadow=false;g.userData.crateRoot=true;return g}
+function createCrate(type,x,z,state='train'){const g=makeCrate(type);g.position.set(x,0,z);scene.add(g);const item={id:++crateId,type,group:g,state,slot:-1};g.userData.item=item;crates.push(item);return item}
+const trainCargoSlots=[[-58,-22],[-54.8,-22],[-51.6,-22],[-69,-22],[-65.8,-22],[-62.6,-22],[-79.8,-22],[-76.6,-22],[-73.4,-22]];
+function spawnTrainCargo(){const types=['rifle','ammo','grenade','rifle','ammo','grenade','rifle','ammo','grenade'];types.forEach((t,i)=>createCrate(t,trainCargoSlots[i][0],trainCargoSlots[i][1],'train'));notify('貨物列車到着。列車の箱をトラックへ積み込め。')}
+spawnTrainCargo();
+
+const truckSlots=[[-2.1,2.25,-.95],[-2.1,2.25,.95],[-.35,2.25,0]];
+const storageSlots=[];for(let z=6.3;z<=13.7;z+=2.5)for(let x=51.5;x<=64.5;x+=2.8)storageSlots.push([x,z]);
+let storageCursor=0;
+const opened={rifle:0,ammo:0,grenade:0};
+
+function attachToTruck(item){const slot=truck.cargo.length;if(slot>=truckSlots.length)return false;truck.group.add(item.group);const s=truckSlots[slot];item.group.position.set(s[0],s[1],s[2]);item.group.rotation.set(0,0,0);item.state=truck.state==='depot'?'truckDepot':'truckStation';item.slot=slot;truck.cargo.push(item);truck.departureAt=performance.now()+1500;updateHUD();return true}
+function relayoutTruckCargo(){truck.cargo.forEach((item,i)=>{const s=truckSlots[i];if(item.group.parent!==truck.group)truck.group.add(item.group);item.group.position.set(s[0],s[1],s[2]);item.slot=i})}
+function moveToStorage(item){const slot=storageSlots[storageCursor++%storageSlots.length];scene.add(item.group);item.group.position.set(slot[0],0,slot[1]);item.group.rotation.set(0,0,0);item.state='storage';item.slot=-1;const i=truck.cargo.indexOf(item);if(i>=0)truck.cargo.splice(i,1);relayoutTruckCargo();if(truck.cargo.length===0)truck.returnAt=performance.now()+900;updateHUD();return true}
+function openStorageCrate(item){if(item.state!=='storage')return;opened[item.type]++;scene.remove(item.group);item.state='opened';updateHUD();notify(`${TYPES[item.type].label}を開封 → ${TYPES[item.type].short} +1`)}
+
+const stationTruckZone={x0:-53,x1:-42,z0:3,z1:13};
+const depotStorageZone={x0:48,x1:68,z0:3,z1:17};
+function inside(p,z){return p.x>=z.x0&&p.x<=z.x1&&p.z>=z.z0&&p.z<=z.z1}
+
+const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();
+function setRay(e){const r=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-r.left)/r.width)*2-1;pointer.y=-((e.clientY-r.top)/r.height)*2+1;ray.setFromCamera(pointer,camera)}
+function itemFromObject(o){while(o&&o!==scene){if(o.userData?.item)return o.userData.item;o=o.parent}return null}
+function groundPoint(e){setRay(e);return ray.intersectObject(ground,false)[0]?.point||null}
+let drag=null;
+renderer.domElement.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType!=='touch')return;setRay(e);const hits=ray.intersectObjects(crates.filter(c=>c.state!=='opened').map(c=>c.group),true);if(!hits.length)return;const item=itemFromObject(hits[0].object);if(!item)return;if(item.state==='storage'){drag={item,startX:e.clientX,startY:e.clientY,moved:false,tapOnly:true};renderer.domElement.setPointerCapture?.(e.pointerId);return}if(item.state==='train'&&view!=='station')return;if(item.state==='truckDepot'&&view!=='depot')return;if(!['train','truckDepot'].includes(item.state))return;const world=new THREE.Vector3();item.group.getWorldPosition(world);scene.attach(item.group);item.group.position.copy(world);drag={item,startX:e.clientX,startY:e.clientY,moved:false,originState:item.state,originWorld:world.clone()};item.state='dragging';renderer.domElement.setPointerCapture?.(e.pointerId);document.body.classList.add('dragging')});
+renderer.domElement.addEventListener('pointermove',e=>{if(!drag||drag.tapOnly)return;const dx=e.clientX-drag.startX,dy=e.clientY-drag.startY;if(Math.hypot(dx,dy)>5)drag.moved=true;const p=groundPoint(e);if(!p)return;drag.item.group.position.set(p.x,.8,p.z)});
+function restoreDragged(d){const item=d.item;if(d.originState==='train'){item.state='train';item.group.position.copy(d.originWorld)}else if(d.originState==='truckDepot'){item.state='truckDepot';truck.group.add(item.group);relayoutTruckCargo()}}
+renderer.domElement.addEventListener('pointerup',e=>{if(!drag)return;const d=drag;drag=null;document.body.classList.remove('dragging');if(d.tapOnly){const moved=Math.hypot(e.clientX-d.startX,e.clientY-d.startY)>7;if(!moved)openStorageCrate(d.item);return}const p=groundPoint(e);if(!p){restoreDragged(d);return}if(d.originState==='train'&&truck.state==='station'&&inside(p,stationTruckZone)&&truck.cargo.length<truckSlots.length){attachToTruck(d.item);notify(`${TYPES[d.item.type].label}をトラックへ積載`);return}if(d.originState==='truckDepot'&&truck.state==='depot'&&inside(p,depotStorageZone)){moveToStorage(d.item);notify(`${TYPES[d.item.type].label}を荷物置き場へ`);return}restoreDragged(d)});
+renderer.domElement.addEventListener('pointercancel',()=>{if(drag&&!drag.tapOnly)restoreDragged(drag);drag=null;document.body.classList.remove('dragging')});
+
+const toast=document.getElementById('toast'),screenName=document.getElementById('screenName'),truckStateEl=document.getElementById('truckState'),truckLoadEl=document.getElementById('truckLoad');
+const rifleCount=document.getElementById('rifleCount'),ammoCount=document.getElementById('ammoCount'),grenadeCount=document.getElementById('grenadeCount');
+const navNext=document.getElementById('navNext'),navPrev=document.getElementById('navPrev');
+function notify(t){toast.textContent=t;toast.classList.add('show');clearTimeout(notify.t);notify.t=setTimeout(()=>toast.classList.remove('show'),1800)}
+function truckText(){if(truck.state==='station')return truck.cargo.length?'積載中 / 発車待ち':'駅で待機';if(truck.state==='toDepot')return '補給所へ輸送中';if(truck.state==='depot')return truck.cargo.length?'荷下ろし待ち':'荷下ろし完了';return '駅へ帰投中'}
+function updateHUD(){screenName.textContent=view==='depot'?'補給所':'貨物駅';truckStateEl.textContent=truckText();truckLoadEl.textContent=`${truck.cargo.length} / 3`;rifleCount.textContent=opened.rifle;ammoCount.textContent=opened.ammo;grenadeCount.textContent=opened.grenade;navNext.classList.toggle('hidden',view==='station');navPrev.classList.toggle('hidden',view==='depot')}
+function go(v){view=v;camGoal=SCREEN[v];updateHUD();notify(v==='station'?'貨物駅：列車からトラックへ積み込め':'補給所：トラックから荷物置き場へ降ろせ')}
+navNext.addEventListener('click',()=>go('station'));
+navPrev.addEventListener('click',()=>go('depot'));
+updateHUD();
+
+function updateTruck(dt,now){if(truck.state==='station'&&truck.cargo.length&&now>=truck.departureAt){truck.state='toDepot';truck.departureAt=0;truck.cargo.forEach(c=>c.state='truckTransit');notify('トラック発車 → 補給所へ');updateHUD()}
+if(truck.state==='toDepot'){truck.group.position.x=Math.min(36,truck.group.position.x+truck.speed*dt);if(truck.group.position.x>=36){truck.state='depot';truck.cargo.forEach(c=>c.state='truckDepot');notify('トラックが補給所へ到着');updateHUD()}}
+if(truck.state==='depot'&&truck.cargo.length===0&&truck.returnAt&&now>=truck.returnAt){truck.state='returning';truck.returnAt=0;notify('空トラックが貨物駅へ帰投');updateHUD()}
+if(truck.state==='returning'){truck.group.position.x=Math.max(-48,truck.group.position.x-truck.speed*dt);if(truck.group.position.x<=-48){truck.state='station';notify('トラックが貨物駅へ戻った');updateHUD()}}}
+function activeTrainCrates(){return crates.filter(c=>c.state==='train').length}
+function updateTrain(dt){trainTimer+=dt;if(trainState==='parked'&&activeTrainCrates()===0&&truck.state!=='station'){trainState='waitingDepart';trainTimer=0}
+if(trainState==='waitingDepart'&&trainTimer>2){trainState='departing';trainTimer=0;notify('貨物列車が次の積荷を取りに出発')}
+if(trainState==='departing'){train.position.x-=18*dt;if(train.position.x<-125){trainState='away';trainTimer=0}}
+if(trainState==='away'&&trainTimer>7){trainState='arriving';train.position.x=-125;trainTimer=0}
+if(trainState==='arriving'){train.position.x+=18*dt;if(train.position.x>=-43){train.position.x=-43;trainState='parked';trainTimer=0;spawnTrainCargo()}}}
+
+let last=performance.now();
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;camX+=(camGoal-camX)*Math.min(1,dt*5.8);updateCamera();updateTruck(dt,now);updateTrain(dt);updateLabels();renderer.render(scene,camera)}
+requestAnimationFrame(loop);
+
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
