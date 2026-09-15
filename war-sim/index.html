@@ -1,34 +1,39 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f171a"><title>War Simulator</title><link rel="stylesheet" href="style.css">
-<script type="importmap">{"imports":{"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js":"./three-bridge.js?v=20260911-2117"}}</script>
-<style>
-#bootStatus{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#0b1114;color:#f3f1e8;font:600 14px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px;text-align:center}
-#bootStatus.hidden{display:none}#bootStatus .card{max-width:640px;padding:18px 20px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(15,23,26,.96);box-shadow:0 20px 60px rgba(0,0,0,.35)}#bootStatus strong{display:block;font-size:16px;margin-bottom:5px}#bootStatus pre{margin:10px 0 0;white-space:pre-wrap;word-break:break-word;text-align:left;font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:#ffcc9c;max-height:36vh;overflow:auto}
-</style></head><body>
-<div id="bootStatus"><div class="card"><strong id="bootTitle">3Dを起動中…</strong><span id="bootMessage">WebGL と描画ライブラリを確認しています。</span><pre id="bootError" hidden></pre></div></div>
-<div id="pcHint"><strong>PC推奨</strong><span>マウスとキーボードでのプレイを推奨</span></div><div id="game"></div>
-<div class="hud"><div class="supply panel"><div class="row"><span>補給</span><span id="supplyText">0 / 500</span></div><div class="bar"><div id="supplyFill"></div></div></div><div id="selection" class="selection panel"><strong id="selectionTitle"></strong><span id="selectionMeta"></span><div id="selectionState"></div></div><div id="toast" class="toast panel"></div><div id="crosshair" class="crosshair"></div><div class="controls panel">WASD 移動 / Shift 高速 / 右ドラッグ 視点 / ホイール ズーム<br>左クリック 移動 / ダブルクリック 分隊攻撃</div><div class="bottom"><button id="deployBtn" disabled>歩兵分隊　30</button></div></div>
-<script type="module">
-const status=document.getElementById('bootStatus'),title=document.getElementById('bootTitle'),message=document.getElementById('bootMessage'),errorBox=document.getElementById('bootError');
-let failed=false;
-function formatError(value){if(value instanceof Error)return `${value.name}: ${value.message}\n${value.stack||''}`;if(typeof value==='string')return value;try{return JSON.stringify(value,null,2)}catch{return String(value)}}
-function showFatal(label,detail){failed=true;status.classList.remove('hidden');title.textContent='3Dの起動に失敗しました';message.textContent=label;errorBox.hidden=false;errorBox.textContent=formatError(detail)}
-window.addEventListener('error',e=>showFatal('JavaScriptの実行中にエラーが発生しました。',e.error||e.message));
-window.addEventListener('unhandledrejection',e=>showFatal('読み込み処理でエラーが発生しました。',e.reason));
-(async()=>{
- try{
-  const probe=document.createElement('canvas');
-  const gl=probe.getContext('webgl2',{powerPreference:'high-performance'})||probe.getContext('webgl',{powerPreference:'high-performance'});
-  if(!gl)throw new Error('WebGLを初期化できません。ブラウザのハードウェアアクセラレーション設定を確認してください。');
-  message.textContent='Three.js を読み込んでいます…';
-  const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
-  if(!THREE.WebGLRenderer||!THREE.Scene||!THREE.PerspectiveCamera)throw new Error('Three.js の必要な機能を読み込めませんでした。');
-  message.textContent='戦場を初期化しています…';
-  await import('./app.js?v=20260912-squad-agents');
-  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-  const canvas=document.querySelector('#game canvas');
-  if(!canvas)throw new Error('WebGLキャンバスが生成されませんでした。');
-  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();showFatal('WebGLコンテキストが失われました。ページを再読み込みしてください。',new Error('webglcontextlost'))});
-  if(!failed)status.classList.add('hidden');
- }catch(error){showFatal('起動テストで停止しました。',error)}
-})();
-</script></body></html>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#171b1d">
+  <title>Frontline Supply</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">{"imports":{"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js":"./three-bridge.js?v=20260916-0055"}}</script>
+</head>
+<body>
+  <div id="bootStatus">
+    <div class="boot-card">
+      <strong id="bootTitle">補給基地を展開中…</strong>
+      <span id="bootMessage">WebGL と戦場データを確認しています。</span>
+      <pre id="bootError" hidden></pre>
+    </div>
+  </div>
+  <div id="pcHint"><strong>PC推奨</strong><span>WASD + E で遊ぶプロトタイプ</span></div>
+  <div id="game"></div>
+  <div id="worldLabels"></div>
+  <div class="hud">
+    <section class="mission panel"><div class="eyebrow">EASTERN FRONT · 1943</div><h1>第17前線補給所</h1><p>物資を加工し、集合地点で増強中隊を完成させろ。</p><div class="score-row"><span>出撃済み</span><strong id="companyCount">0 中隊</strong></div></section>
+    <section class="front panel"><div class="eyebrow">FRONT STATUS</div><div class="row"><span>前線維持率</span><strong id="frontValue">72%</strong></div><div class="meter"><div id="frontFill"></div></div><small id="frontMessage">前線から増援要請</small></section>
+    <section class="recipe panel"><div class="eyebrow">COMPANY ASSEMBLY</div><h2>増強中隊</h2><div id="recipeList"></div><div id="companyReady" class="ready-banner">集合地点で編成中</div></section>
+    <section class="carry panel"><span class="eyebrow">CARRY</span><strong id="carryText">手ぶら</strong><small id="nearText">物資に近づいて E</small></section>
+    <section class="controls panel"><strong>操作</strong><span>WASD / 矢印：移動</span><span>E：拾う・置く・加工・号令</span><span>Shift：走る</span></section>
+    <div id="toast" class="toast panel"></div><div id="interactPrompt" class="interact-prompt"><kbd>E</kbd><span></span></div>
+  </div>
+  <script type="module">
+    const status=document.getElementById('bootStatus'),title=document.getElementById('bootTitle'),message=document.getElementById('bootMessage'),errorBox=document.getElementById('bootError');
+    let failed=false;
+    function fmt(v){if(v instanceof Error)return `${v.name}: ${v.message}\n${v.stack||''}`;return String(v)}
+    function fatal(label,error){failed=true;status.classList.remove('hidden');title.textContent='起動に失敗しました';message.textContent=label;errorBox.hidden=false;errorBox.textContent=fmt(error)}
+    addEventListener('error',e=>fatal('JavaScript 実行エラー',e.error||e.message));addEventListener('unhandledrejection',e=>fatal('読み込み処理エラー',e.reason));
+    (async()=>{try{const probe=document.createElement('canvas');const gl=probe.getContext('webgl2')||probe.getContext('webgl');if(!gl)throw new Error('WebGL を初期化できません。');message.textContent='Three.js を読み込んでいます…';const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');if(!THREE.WebGLRenderer)throw new Error('Three.js の読み込みに失敗しました。');message.textContent='補給基地を生成しています…';await import('./app.js?v=20260916-0055');await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));if(!document.querySelector('#game canvas'))throw new Error('WebGL canvas が生成されませんでした。');if(!failed)status.classList.add('hidden')}catch(e){fatal('起動テストで停止しました。',e)}})();
+  </script>
+</body>
+</html>
