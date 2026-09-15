@@ -78,12 +78,12 @@ const truck={group:makeTruck(),state:'station',cargo:[],departureAt:0,returnAt:0
 const TYPES={rifle:{label:'小銃箱',short:'小銃',paint:0x6e563a,mark:0xc7b46d},ammo:{label:'弾薬箱',short:'弾薬',paint:0x596044,mark:0xd1c477},grenade:{label:'グレネード箱',short:'グレネード',paint:0x4b5650,mark:0xb4c2a6}};
 const crates=[];let crateId=0;
 function makeCrate(type){const def=TYPES[type],g=new THREE.Group();box(1.75,1.15,1.35,mat(def.paint,.98),0,.62,0,g);for(const x of [-.7,.7])box(.13,1.2,1.42,M.dark,x,.64,0,g);for(const z of [-.55,.55])box(1.82,.13,.13,M.dark,0,1.03,z,g);const plate=box(.78,.34,.06,mat(def.mark,.82),0,.72,-.705,g);plate.castShadow=false;g.userData.crateRoot=true;return g}
-function createCrate(type,x,z,state='train'){const g=makeCrate(type);g.position.set(x,0,z);scene.add(g);const item={id:++crateId,type,group:g,state,slot:-1};g.userData.item=item;crates.push(item);return item}
+function createCrate(type,x,z,state='train'){const g=makeCrate(type);g.position.set(x,state==='train'?1.55:0,z);scene.add(g);const item={id:++crateId,type,group:g,state,slot:-1};g.userData.item=item;crates.push(item);return item}
 const trainCargoSlots=[[-58,-22],[-54.8,-22],[-51.6,-22],[-69,-22],[-65.8,-22],[-62.6,-22],[-79.8,-22],[-76.6,-22],[-73.4,-22]];
 function spawnTrainCargo(){const types=['rifle','ammo','grenade','rifle','ammo','grenade','rifle','ammo','grenade'];types.forEach((t,i)=>createCrate(t,trainCargoSlots[i][0],trainCargoSlots[i][1],'train'));notify('貨物列車到着。列車の箱をトラックへ積み込め。')}
 spawnTrainCargo();
 
-const truckSlots=[[-2.1,2.25,-.95],[-2.1,2.25,.95],[-.35,2.25,0]];
+const truckSlots=[[-2.1,1.62,-.95],[-2.1,1.62,.95],[-.35,1.62,0]];
 const storageSlots=[];for(let z=6.3;z<=13.7;z+=2.5)for(let x=51.5;x<=64.5;x+=2.8)storageSlots.push([x,z]);
 let storageCursor=0;
 const opened={rifle:0,ammo:0,grenade:0};
