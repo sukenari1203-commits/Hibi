@@ -3,37 +3,35 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#171b1d">
+  <meta name="theme-color" content="#171916">
   <title>Frontline Supply</title>
-  <link rel="stylesheet" href="style.css">
-  <script type="importmap">{"imports":{"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js":"./three-bridge.js?v=20260916-0055"}}</script>
+  <link rel="stylesheet" href="style.css?v=20260916-0150">
+  <script type="importmap">{"imports":{"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js":"./three-bridge.js?v=20260911-2117"}}</script>
 </head>
 <body>
-  <div id="bootStatus">
-    <div class="boot-card">
-      <strong id="bootTitle">補給基地を展開中…</strong>
-      <span id="bootMessage">WebGL と戦場データを確認しています。</span>
-      <pre id="bootError" hidden></pre>
-    </div>
-  </div>
-  <div id="pcHint"><strong>PC推奨</strong><span>WASD + E で遊ぶプロトタイプ</span></div>
+  <div id="bootStatus"><div class="boot-card"><strong id="bootTitle">補給路を展開中…</strong><span id="bootMessage">WebGL を確認しています。</span><pre id="bootError" hidden></pre></div></div>
   <div id="game"></div>
   <div id="worldLabels"></div>
   <div class="hud">
-    <section class="mission panel"><div class="eyebrow">EASTERN FRONT · 1943</div><h1>第17前線補給所</h1><p>物資を加工し、集合地点で増強中隊を完成させろ。</p><div class="score-row"><span>出撃済み</span><strong id="companyCount">0 中隊</strong></div></section>
-    <section class="front panel"><div class="eyebrow">FRONT STATUS</div><div class="row"><span>前線維持率</span><strong id="frontValue">72%</strong></div><div class="meter"><div id="frontFill"></div></div><small id="frontMessage">前線から増援要請</small></section>
-    <section class="recipe panel"><div class="eyebrow">COMPANY ASSEMBLY</div><h2>増強中隊</h2><div id="recipeList"></div><div id="companyReady" class="ready-banner">集合地点で編成中</div></section>
-    <section class="carry panel"><span class="eyebrow">CARRY</span><strong id="carryText">手ぶら</strong><small id="nearText">物資に近づいて E</small></section>
-    <section class="controls panel"><strong>操作</strong><span>WASD / 矢印：移動</span><span>E：拾う・置く・加工・号令</span><span>Shift：走る</span></section>
-    <div id="toast" class="toast panel"></div><div id="interactPrompt" class="interact-prompt"><kbd>E</kbd><span></span></div>
+    <section class="topbar panel">
+      <div><span class="eyebrow">FRONTLINE LOGISTICS</span><h1 id="screenName">補給所</h1></div>
+      <div class="status"><span>トラック</span><strong id="truckState">駅で待機</strong><small>積載 <b id="truckLoad">0 / 3</b></small></div>
+    </section>
+    <section class="inventory panel">
+      <span class="eyebrow">OPENED SUPPLIES</span>
+      <div class="inv-row"><div><i class="rifle-dot"></i><span>小銃</span><strong id="rifleCount">0</strong></div><div><i class="ammo-dot"></i><span>弾薬</span><strong id="ammoCount">0</strong></div><div><i class="grenade-dot"></i><span>グレネード</span><strong id="grenadeCount">0</strong></div></div>
+    </section>
+    <section class="guide panel"><strong>操作</strong><span>箱をドラッグ：積み込み / 荷下ろし</span><span>荷物置き場の箱をタップ：開封</span></section>
+    <button id="navNext" class="nav nav-right" aria-label="貨物駅へ"><b>▶</b><span>貨物駅</span></button>
+    <button id="navPrev" class="nav nav-left hidden" aria-label="補給所へ"><b>◀</b><span>補給所</span></button>
+    <div id="toast" class="toast panel"></div>
   </div>
   <script type="module">
-    const status=document.getElementById('bootStatus'),title=document.getElementById('bootTitle'),message=document.getElementById('bootMessage'),errorBox=document.getElementById('bootError');
-    let failed=false;
+    const status=document.getElementById('bootStatus'),title=document.getElementById('bootTitle'),message=document.getElementById('bootMessage'),errorBox=document.getElementById('bootError');let failed=false;
     function fmt(v){if(v instanceof Error)return `${v.name}: ${v.message}\n${v.stack||''}`;return String(v)}
     function fatal(label,error){failed=true;status.classList.remove('hidden');title.textContent='起動に失敗しました';message.textContent=label;errorBox.hidden=false;errorBox.textContent=fmt(error)}
     addEventListener('error',e=>fatal('JavaScript 実行エラー',e.error||e.message));addEventListener('unhandledrejection',e=>fatal('読み込み処理エラー',e.reason));
-    (async()=>{try{const probe=document.createElement('canvas');const gl=probe.getContext('webgl2')||probe.getContext('webgl');if(!gl)throw new Error('WebGL を初期化できません。');message.textContent='Three.js を読み込んでいます…';const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');if(!THREE.WebGLRenderer)throw new Error('Three.js の読み込みに失敗しました。');message.textContent='補給基地を生成しています…';await import('./app.js?v=20260916-0055');await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));if(!document.querySelector('#game canvas'))throw new Error('WebGL canvas が生成されませんでした。');if(!failed)status.classList.add('hidden')}catch(e){fatal('起動テストで停止しました。',e)}})();
+    (async()=>{try{const probe=document.createElement('canvas');const gl=probe.getContext('webgl2')||probe.getContext('webgl');if(!gl)throw new Error('WebGL を初期化できません。');message.textContent='Three.js を読み込んでいます…';const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');if(!THREE.WebGLRenderer)throw new Error('Three.js の読み込みに失敗しました。');message.textContent='貨物駅と補給所を生成しています…';await import('./app.js?v=20260916-0150');await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));if(!document.querySelector('#game canvas'))throw new Error('WebGL canvas が生成されませんでした。');if(!failed)status.classList.add('hidden')}catch(e){fatal('起動テストで停止しました。',e)}})();
   </script>
 </body>
 </html>
