@@ -1,142 +1,16 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>VENTURE INFO · SME CONVEYOR</title>
-<style>
-:root{--ink:#101010;--cream:#f4efe4;--gold:#c89a3d;--silver:#d8dde3;--steel:#5f6872;--factory:#37393d;}
-*{box-sizing:border-box} html,body{margin:0;min-height:100%;font-family:Inter,"Noto Sans JP",system-ui,sans-serif;background:#151617;color:#f5f2ea} button,a{font:inherit}
-.topbar{height:76px;background:#f5f0e6;color:#171717;display:flex;align-items:center;padding:0 28px;gap:30px;border-bottom:1px solid #d5c7ab;position:relative;z-index:20}
-.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;min-width:230px} .brand-mark{width:36px;height:36px;border:1px solid #9e7b3e;border-radius:50%;display:grid;place-items:center;color:#9e7b3e;font-size:22px} .brand strong{display:block;letter-spacing:.08em} .brand small{display:block;font-size:8px;letter-spacing:.2em;color:#7d6c51;margin-top:3px}
-.nav{display:flex;gap:6px;flex:1;justify-content:center} .nav a{text-decoration:none;color:#635d53;padding:10px 14px;border-radius:999px;font-size:13px;font-weight:700} .nav a.active{background:#171717;color:#fff}
-.nav a:hover{background:#e8decb;color:#171717} .count-badge{font-size:12px;color:#736b60;background:white;border:1px solid #ddd1bc;padding:8px 12px;border-radius:999px;white-space:nowrap}
-.factory{height:calc(100vh - 76px);min-height:620px;position:relative;overflow:hidden;background:linear-gradient(#27292d 0 19%,#46494e 19% 68%,#292b2f 68%);isolation:isolate}
-.factory:before{content:"";position:absolute;inset:0 0 32%;background:repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 2px,transparent 2px 170px),linear-gradient(180deg,rgba(255,255,255,.06),transparent 22%);box-shadow:inset 0 -12px 30px #202124;z-index:-4}
-.ceiling{position:absolute;left:-3%;right:-3%;top:0;height:24%;background:linear-gradient(165deg,#18191b 0 40%,transparent 40%),linear-gradient(195deg,#1f2023 0 42%,transparent 42%);opacity:.95;z-index:-2}
-.beams{position:absolute;inset:0 0 auto;height:28%;background:repeating-linear-gradient(90deg,transparent 0 150px,#111214 150px 164px,transparent 164px 330px);transform:perspective(500px) rotateX(-20deg);transform-origin:top;opacity:.75;z-index:-1}
-.lights{position:absolute;top:10%;left:5%;right:5%;display:flex;justify-content:space-around} .light{width:180px;height:8px;background:#f8f3dd;border-radius:5px;box-shadow:0 0 22px 7px rgba(255,244,205,.25)}
-.wall-grid{position:absolute;left:0;right:0;top:24%;height:44%;background:repeating-linear-gradient(0deg,transparent 0 69px,rgba(30,30,30,.3) 69px 71px),repeating-linear-gradient(90deg,transparent 0 139px,rgba(25,25,25,.25) 139px 141px);z-index:-1}
-.floor{position:absolute;left:-15%;right:-15%;bottom:-22%;height:55%;background:linear-gradient(rgba(20,20,20,.25),rgba(20,20,20,.48)),repeating-linear-gradient(90deg,transparent 0 116px,rgba(18,18,18,.4) 116px 119px),repeating-linear-gradient(0deg,#77797c 0 70px,#5e6064 70px 73px);transform:perspective(500px) rotateX(61deg);transform-origin:top;z-index:-1}
-.sign{position:absolute;top:10%;left:50%;transform:translateX(-50%);background:#ece8dc;color:#171717;padding:18px 25px;border:5px solid #2b2d30;box-shadow:0 11px 20px rgba(0,0,0,.28);text-align:center;min-width:420px} .sign small{display:block;letter-spacing:.22em;font-size:10px;color:#8b6b31} .sign h1{font-size:27px;margin:6px 0 2px} .sign p{margin:0;font-size:11px;color:#67635d}
-.conveyor{position:absolute;left:-3%;right:-3%;top:55%;height:190px;z-index:5;filter:drop-shadow(0 20px 18px rgba(0,0,0,.45))}
-.belt-top{position:absolute;left:0;right:0;top:0;height:96px;border:8px solid #222;border-radius:16px;background:repeating-linear-gradient(90deg,#45484c 0 52px,#35383b 52px 58px);animation:belt 1.05s linear infinite;box-shadow:inset 0 12px 8px rgba(255,255,255,.04),inset 0 -14px 14px rgba(0,0,0,.3)}
-@keyframes belt{to{background-position-x:-116px}}
-.rail{position:absolute;left:0;right:0;top:90px;height:24px;background:linear-gradient(#a9afb5,#52585e 32%,#24272a 70%);border:4px solid #1c1e20}
-.rollers{position:absolute;left:2%;right:2%;top:106px;display:flex;justify-content:space-around} .roller{width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#222 0 14%,#a4a9ad 15% 24%,#41464b 25% 62%,#1b1d1f 63%);border:4px solid #1b1d1f;animation:spin .8s linear infinite} @keyframes spin{to{transform:rotate(-360deg)}}
-.legs{position:absolute;left:7%;right:7%;top:155px;height:210px;border-left:18px solid #33383d;border-right:18px solid #33383d} .legs:after{content:"";position:absolute;left:-55px;right:-55px;bottom:0;border-top:20px solid #292d31}
-.ore-layer{position:absolute;inset:0;pointer-events:none;z-index:8}
-.ore{--shape:polygon(16% 8%,78% 2%,98% 32%,88% 86%,48% 100%,5% 72%,0 30%);position:absolute;left:105vw;top:calc(55% - 70px);width:72px;height:65px;clip-path:var(--shape);background:linear-gradient(135deg,#f4f6f8 0%,#aab1b8 22%,#eef1f3 43%,#737b84 69%,#d9dde1 100%);border:none;box-shadow:0 10px 14px rgba(0,0,0,.3),inset 10px 10px 12px rgba(255,255,255,.34),inset -12px -12px 18px rgba(0,0,0,.22);cursor:pointer;pointer-events:auto;display:grid;place-items:center;animation:oreTravel var(--dur) linear forwards;transform-origin:center;isolation:isolate}
-.ore:before{content:"";position:absolute;inset:10%;clip-path:inherit;background:linear-gradient(120deg,rgba(255,255,255,.42),transparent 38%);z-index:-1} .ore .glyph{font-size:24px;color:#30353a;text-shadow:0 1px #fff;font-weight:900} .ore .mini{position:absolute;bottom:8px;font-size:7px;letter-spacing:.02em;color:#24282c;background:rgba(245,247,249,.72);padding:2px 4px;border-radius:4px;max-width:58px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ore:hover{filter:brightness(1.18);scale:1.08} @keyframes oreTravel{0%{translate:0 0;rotate:0deg}25%{translate:-30vw 2px;rotate:-4deg}50%{translate:-60vw -1px;rotate:3deg}75%{translate:-90vw 2px;rotate:-2deg}100%{translate:-125vw 0;rotate:2deg}}
-.status{position:absolute;left:22px;bottom:22px;background:rgba(18,19,20,.78);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(10px);padding:12px 15px;border-radius:12px;font-size:11px;z-index:10;color:#dedbd3} .status b{color:#fff} .status .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#65d284;box-shadow:0 0 8px #65d284;margin-right:7px}
-.hint{position:absolute;right:22px;bottom:22px;background:#eee8da;color:#2a2927;padding:11px 14px;border-radius:10px;font-size:11px;z-index:10}
-dialog{width:min(920px,calc(100vw - 28px));max-height:90vh;border:0;padding:0;border-radius:22px;background:#f6f1e8;color:#171717;box-shadow:0 30px 90px rgba(0,0,0,.55)} dialog::backdrop{background:rgba(8,8,9,.7);backdrop-filter:blur(4px)} .modal-head{padding:24px 26px 18px;background:linear-gradient(135deg,#22252a,#4e555d);color:white;display:flex;gap:18px;align-items:center;position:relative} .modal-ore{width:76px;height:70px;clip-path:polygon(12% 7%,80% 0,100% 37%,84% 94%,38% 100%,0 69%,5% 28%);background:linear-gradient(135deg,#fff,#8f979f 30%,#e3e7ea 55%,#686f76);display:grid;place-items:center;color:#222;font-weight:900;font-size:26px;flex:0 0 auto} .modal-head small{font-size:11px;letter-spacing:.15em;color:#d7dce1} .modal-head h2{margin:4px 0;font-size:29px} .modal-head p{margin:0;color:#d7dce1;font-size:13px;line-height:1.65} .close{position:absolute;right:14px;top:12px;border:0;background:rgba(255,255,255,.12);color:white;width:36px;height:36px;border-radius:50%;cursor:pointer}
-.modal-body{padding:20px 26px 26px;overflow:auto;max-height:66vh}
-
-/* ===== V2: 給与を最優先KPIとして強調 ===== */
-.snapshot{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 22px}
-.snap{background:#fff;border:1px solid #ddd4c5;border-radius:14px;padding:16px;min-height:92px}
-.snap small{display:block;color:#807565;font-size:11px;font-weight:800;margin-bottom:7px}
-.snap strong{display:block;color:#171717;font-size:17px;line-height:1.45;font-weight:800}
-.snap span{display:block;margin-top:9px;color:#8b8171;font-size:10px}
-.snap.salary-highlight{grid-column:1/-1;min-height:142px;padding:22px 25px;background:linear-gradient(135deg,#171717 0%,#292929 100%);border:1px solid #171717;color:#fff;position:relative;overflow:hidden;box-shadow:inset 4px 0 0 var(--gold)}
-.snap.salary-highlight::before{content:"SALARY";position:absolute;top:18px;right:21px;font-size:10px;font-weight:900;letter-spacing:.18em;color:#d3ad5a}
-.snap.salary-highlight small{color:#d3ad5a;font-size:12px;letter-spacing:.06em}
-.snap.salary-highlight strong{color:#fff;font-size:28px;line-height:1.35;max-width:760px;padding-right:80px}
-.snap.salary-highlight span{color:#cfc8bc;font-size:11px}
-
-.tabs{display:flex;gap:9px;overflow-x:auto;padding-bottom:8px}
-.tab{border:1px solid #d6cdbd;background:#fff;border-radius:999px;padding:10px 15px;white-space:nowrap;cursor:pointer;font-size:13px;font-weight:750}
-.tab.active{background:#191919;color:#fff;border-color:#191919}
-.summary{font-size:15px;color:#5f584e;line-height:1.75;margin:16px 0}
-.fact{display:grid;grid-template-columns:160px minmax(0,1fr) auto;gap:18px;align-items:start;padding:18px 6px;border-top:1px solid #ded5c7;font-size:15px;line-height:1.7}
-.fact label{font-size:14px;line-height:1.5;font-weight:850;color:#332e28}
-.fact>div{font-size:16px;line-height:1.75;color:#171717;font-weight:550}
-.pill{border:1px solid #b8ad9c;border-radius:999px;padding:6px 9px;font-size:10px;color:#6a6257;text-decoration:none;white-space:nowrap}
-.sources{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-.source{font-size:11px;line-height:1.5;color:#6e5529;background:#fff8e8;border:1px solid #d6b977;padding:10px 12px;border-radius:10px;text-decoration:none}
-.actions{display:flex;justify-content:flex-end;gap:10px;padding-top:17px} .save{border:0;background:#171717;color:white;border-radius:12px;padding:11px 17px;font-weight:800;cursor:pointer} .save.saved{background:#8e969e;color:#171717}
-.disclaimer{position:absolute;left:50%;transform:translateX(-50%);top:43%;z-index:2;color:rgba(255,255,255,.64);font-size:9px;letter-spacing:.03em;text-align:center;width:min(90%,740px)}
-
-@media(max-width:760px){
-.topbar{height:62px;padding:0 12px;gap:8px}.brand{min-width:auto}.brand small{display:none}.brand strong{font-size:12px}.nav{justify-content:flex-end;gap:1px}.nav a{font-size:10px;padding:8px 7px}.count-badge{display:none}.factory{height:calc(100vh - 62px);min-height:560px}.sign{top:8%;min-width:0;width:82%;padding:14px 12px}.sign h1{font-size:20px}.light{width:74px}.conveyor{top:56%;height:160px}.belt-top{height:82px}.rail{top:77px}.rollers{top:92px}.roller{width:44px;height:44px}.ore{top:calc(56% - 60px);width:61px;height:56px}.disclaimer{top:40%;font-size:8px}.status{left:12px;bottom:12px}.hint{right:12px;bottom:12px;max-width:45%;font-size:9px}
-dialog{border-radius:18px 18px 0 0;margin:auto 0 0;width:100%;max-width:none}
-.modal-body{padding:16px 17px 22px}
-.snapshot{grid-template-columns:1fr 1fr;gap:10px}
-.snap.salary-highlight{grid-column:1/-1;min-height:124px;padding:18px 19px}
-.snap.salary-highlight strong{font-size:23px;padding-right:0}
-.snap.salary-highlight::before{top:15px;right:16px}
-.fact{grid-template-columns:1fr;gap:6px;padding:17px 3px}
-.fact label{font-size:13px}
-.fact>div{font-size:16px}
-.fact .pill{grid-column:1;justify-self:start}
-}
-</style>
-</head><body>
-<header class="topbar"><a class="brand" href="index.html"><span class="brand-mark">◇</span><span><strong>VENTURE INFO</strong><small>DISCOVER. DIG. INVEST.</small></span></a><nav class="nav"><a href="index.html">採掘場</a><a class="active" href="conveyor.html">ベルトコンベアー</a><a href="collection.html">図鑑</a><a href="report.html">レポート</a></nav><div class="count-badge">SME LINE · <b>100</b> COMPANIES</div></header>
-<main class="factory" id="factory"><div class="ceiling"></div><div class="beams"></div><div class="lights"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="wall-grid"></div><div class="floor"></div><section class="sign"><small>VENTURE INFO · FACTORY DISCOVERY LINE</small><h1>中小・中堅企業ベルト</h1><p>銀色の鉱石をタップして、まだ知らない企業を発見する。</p></section><div class="disclaimer">VENTURE INFO選定の「中小・中堅企業」ラインです。法令上の中小企業定義と一致しない企業を含みます。企業情報は公式採用・企業サイトのみ。</div>
-<div class="conveyor"><div class="belt-top"></div><div class="rail"></div><div class="rollers"><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div><div class="roller"></div></div><div class="legs"></div></div><div class="ore-layer" id="oreLayer"></div>
-<div class="status"><span class="dot"></span><b>LINE RUNNING</b>　未保存 <span id="remaining">100</span> / 100社</div><div class="hint">銀鉱石をクリック → 企業情報 → 図鑑に保存</div></main>
-<dialog id="companyDialog"><div class="modal-head"><div class="modal-ore" id="dialogOre">SME</div><div><small id="dialogIndustry"></small><h2 id="dialogName"></h2><p id="dialogSummary"></p></div><button class="close" id="closeDialog">×</button></div><div class="modal-body"><div class="snapshot" id="snapshot"></div><div class="tabs" id="tabs"></div><div id="detail"></div><div class="sources" id="sources"></div><div class="actions"><button class="save" id="saveBtn">図鑑に保存</button></div></div></dialog>
-<script src="company-data-client.js?v=20260828-all204"></script>
-<script>
-const INTEREST_KEY="vi-interest-signals-v1";
-function broadIndustry(i){const s=String(i||"");if(/金融|Fintech|M&A/.test(s))return"金融";if(/人材|教育|福祉/.test(s))return"人材・Platform";if(/自動車/.test(s))return"自動車";if(/通信/.test(s))return"通信";if(/食品|小売|EC|ドラッグ|アパレル|医療/.test(s))return"消費財・小売";if(/製造|半導体|素材|機械|部品|電機/.test(s))return"メーカー・DX";if(/商社/.test(s))return"総合商社";if(/広告|メディア|エンタメ/.test(s))return"テック・メディア";return"IT・SI";}
-function recordSmeInterest(industry,type){try{const key=broadIndustry(industry),all=JSON.parse(localStorage.getItem(INTEREST_KEY)||"{}"),r=all[key]||{dig:0,discover:0,open:0,save:0};r[type]=(Number(r[type])||0)+1;all[key]=r;localStorage.setItem(INTEREST_KEY,JSON.stringify(all));}catch(_){}}
-const SME_CATALOG=[{"name":"Cybozu","displayName":"サイボウズ","industry":"IT・SaaS"},{"name":"freee","displayName":"freee","industry":"IT・SaaS"},{"name":"HENNGE","displayName":"HENNGE","industry":"IT・SaaS"},{"name":"PKSHA Technology","displayName":"PKSHA Technology","industry":"AI・データ"},{"name":"ABEJA","displayName":"ABEJA","industry":"AI・データ"},{"name":"Speee","displayName":"Speee","industry":"IT・DX"},{"name":"LITALICO","displayName":"LITALICO","industry":"人材・教育・福祉"},{"name":"Kaonavi","displayName":"カオナビ","industry":"IT・SaaS"},{"name":"Timee","displayName":"タイミー","industry":"人材・Platform"},{"name":"RAKUS","displayName":"ラクス","industry":"IT・SaaS"},{"name":"GMO Pepabo","displayName":"GMOペパボ","industry":"IT・Platform"},{"name":"kubell","displayName":"kubell","industry":"IT・SaaS"},{"name":"Wantedly","displayName":"ウォンテッドリー","industry":"人材・Platform"},{"name":"Uzabase","displayName":"ユーザベース","industry":"メディア・情報"},{"name":"Bengo4.com","displayName":"弁護士ドットコム","industry":"IT・Platform"},{"name":"Coconala","displayName":"ココナラ","industry":"IT・Platform"},{"name":"note","displayName":"note","industry":"メディア・Platform"},{"name":"BASE","displayName":"BASE","industry":"EC・Platform"},{"name":"Hamee","displayName":"Hamee","industry":"EC・プロダクト"},{"name":"E-Guardian","displayName":"イー・ガーディアン","industry":"IT・BPO"},{"name":"S-Pool","displayName":"エスプール","industry":"人材・BPO"},{"name":"AI inside","displayName":"AI inside","industry":"AI・データ"},{"name":"Finatext Holdings","displayName":"Finatextホールディングス","industry":"Fintech"},{"name":"CINC","displayName":"CINC","industry":"マーケティング・DX"},{"name":"Sun Asterisk","displayName":"Sun Asterisk","industry":"IT・DX"},{"name":"Feedforce Group","displayName":"フィードフォースグループ","industry":"IT・SaaS"},{"name":"GMO Financial Gate","displayName":"GMOフィナンシャルゲート","industry":"Fintech"},{"name":"Port","displayName":"ポート","industry":"人材・Platform"},{"name":"Septeni Holdings","displayName":"セプテーニ・ホールディングス","industry":"広告・デジタル"},{"name":"Enigmo","displayName":"エニグモ","industry":"EC・Platform"},{"name":"Harmonic Drive Systems","displayName":"ハーモニック・ドライブ・システムズ","industry":"製造・機械"},{"name":"NITTOKU","displayName":"NITTOKU","industry":"製造・FA"},{"name":"RORZE","displayName":"ローツェ","industry":"半導体・製造装置"},{"name":"TOWA","displayName":"TOWA","industry":"半導体・製造装置"},{"name":"Ferrotec","displayName":"フェローテック","industry":"半導体・素材"},{"name":"Mimaki Engineering","displayName":"ミマキエンジニアリング","industry":"製造・機械"},{"name":"Shibaura Mechatronics","displayName":"芝浦メカトロニクス","industry":"半導体・製造装置"},{"name":"SATO Holdings","displayName":"サトーホールディングス","industry":"製造・IoT"},{"name":"Japan Material","displayName":"ジャパンマテリアル","industry":"半導体・インフラ"},{"name":"OHARA","displayName":"オハラ","industry":"素材・光学"},{"name":"Nippon Tungsten","displayName":"日本タングステン","industry":"素材・部品"},{"name":"Yamashin-Filter","displayName":"ヤマシンフィルタ","industry":"製造・部品"},{"name":"TOCALO","displayName":"トーカロ","industry":"素材・表面処理"},{"name":"MARUWA","displayName":"MARUWA","industry":"電子部品・素材"},{"name":"Yamabiko","displayName":"やまびこ","industry":"製造・機械"},{"name":"Nagaileben","displayName":"ナガイレーベン","industry":"医療・アパレル"},{"name":"Nippon Thompson","displayName":"日本トムソン","industry":"製造・部品"},{"name":"Tsubaki Nakashima","displayName":"椿本ナカシマ","industry":"製造・部品"},{"name":"CKD","displayName":"CKD","industry":"製造・FA"},{"name":"Nitto Kogyo","displayName":"日東工業","industry":"電機・インフラ"},{"name":"Seria","displayName":"セリア","industry":"小売"},{"name":"Workman","displayName":"ワークマン","industry":"小売"},{"name":"Rock Field","displayName":"ロック・フィールド","industry":"食品・小売"},{"name":"Yomeishu Seizo","displayName":"養命酒製造","industry":"食品・ヘルスケア"},{"name":"Aohata","displayName":"アヲハタ","industry":"食品"},{"name":"Bourbon","displayName":"ブルボン","industry":"食品"},{"name":"Imuraya Group","displayName":"井村屋グループ","industry":"食品"},{"name":"Yutaka Foods","displayName":"ユタカフーズ","industry":"食品"},{"name":"Nitto Fuji Flour Milling","displayName":"日東富士製粉","industry":"食品"},{"name":"Belc","displayName":"ベルク","industry":"小売"},{"name":"Genky DrugStores","displayName":"Genky DrugStores","industry":"ドラッグストア"},{"name":"Okuwa","displayName":"オークワ","industry":"小売"},{"name":"Yakuodo Holdings","displayName":"薬王堂ホールディングス","industry":"ドラッグストア"},{"name":"JAC Recruitment","displayName":"JAC Recruitment","industry":"人材"},{"name":"Gakujo","displayName":"学情","industry":"人材"},{"name":"Career Design Center","displayName":"キャリアデザインセンター","industry":"人材・メディア"},{"name":"SMS","displayName":"エス・エム・エス","industry":"人材・ヘルスケア"},{"name":"Fullcast Holdings","displayName":"フルキャストホールディングス","industry":"人材"},{"name":"Japan Elevator Service","displayName":"ジャパンエレベーターサービスHD","industry":"設備・サービス"},{"name":"Insource","displayName":"インソース","industry":"研修・人材"},{"name":"Creek & River","displayName":"クリーク・アンド・リバー社","industry":"人材・クリエイティブ"},{"name":"Quick","displayName":"クイック","industry":"人材"},{"name":"MS-Japan","displayName":"MS-Japan","industry":"人材"},{"name":"Ateam Holdings","displayName":"エイチームホールディングス","industry":"IT・デジタル"},{"name":"Digital Holdings","displayName":"デジタルホールディングス","industry":"広告・デジタル"},{"name":"GENDA","displayName":"GENDA","industry":"エンタメ・店舗"},{"name":"M&A Capital Partners","displayName":"M&Aキャピタルパートナーズ","industry":"M&A・金融"},{"name":"Strike","displayName":"ストライク","industry":"M&A・金融"},{"name":"IR Japan Holdings","displayName":"アイ・アール ジャパンHD","industry":"金融・IR"},{"name":"System Support Holdings","displayName":"システムサポートHD","industry":"IT・SI"},{"name":"Cross Cat","displayName":"クロスキャット","industry":"IT・SI"},{"name":"NSW","displayName":"NSW","industry":"IT・SI"},{"name":"BeeX","displayName":"BeeX","industry":"Cloud・IT"},{"name":"ID Holdings","displayName":"IDホールディングス","industry":"IT・SI"},{"name":"Broadleaf","displayName":"ブロードリーフ","industry":"IT・SaaS"},{"name":"NCS&A","displayName":"NCS&A","industry":"IT・SI"},{"name":"SIG Group","displayName":"SIGグループ","industry":"IT・SI"},{"name":"Sakura KCS","displayName":"さくらケーシーエス","industry":"IT・SI"},{"name":"CEC","displayName":"シーイーシー","industry":"IT・SI"},{"name":"Solxyz","displayName":"ソルクシーズ","industry":"IT・SI"},{"name":"System Integrator","displayName":"システムインテグレータ","industry":"IT・SI"},{"name":"Nippon RAD","displayName":"日本ラッド","industry":"IT・SI"},{"name":"TDC Soft","displayName":"TDCソフト","industry":"IT・SI"},{"name":"JBCC Holdings","displayName":"JBCCホールディングス","industry":"IT・SI"},{"name":"ODK Solutions","displayName":"ODKソリューションズ","industry":"IT・SI"},{"name":"Asteria","displayName":"アステリア","industry":"IT・SaaS"},{"name":"TerraSky","displayName":"テラスカイ","industry":"Cloud・IT"},{"name":"CAC","displayName":"シーエーシー","industry":"IT・SI"},{"name":"Shizuoka Sangyo-sha","displayName":"静岡産業社","industry":"商社・包装"},{"name":"SANN","displayName":"SANN","industry":"広告・人材"}];
-const SAVED_KEY="vi-sme-saved-v1", CATALOG_KEY="vi-sme-catalog-v1";
-try{localStorage.setItem(CATALOG_KEY,JSON.stringify(SME_CATALOG));}catch(_ ){}
-let saved=new Set(JSON.parse(localStorage.getItem(SAVED_KEY)||"[]")); let selected=null; let active=new Map(); let spawnTimer=null;
-const shapes=["polygon(10% 5%,72% 0,100% 29%,88% 87%,47% 100%,4% 72%,0 27%)","polygon(22% 0,83% 11%,100% 50%,76% 100%,18% 91%,0 44%)","polygon(5% 20%,45% 0,94% 14%,100% 70%,62% 100%,14% 83%,0 48%)","polygon(15% 0,67% 5%,100% 38%,81% 95%,32% 100%,0 66%,4% 26%)","polygon(29% 0,82% 8%,100% 54%,66% 100%,13% 86%,0 36%)"];
-const glyphs={"IT・SaaS":"⌘","AI・データ":"AI","IT・DX":"DX","人材・教育・福祉":"人","人材・Platform":"人","IT・Platform":"◎","メディア・情報":"▶","メディア・Platform":"▶","EC・Platform":"□","EC・プロダクト":"□","IT・BPO":"IT","人材・BPO":"人","Fintech":"¥","マーケティング・DX":"↗","広告・デジタル":"AD","製造・機械":"⚙","製造・FA":"⚙","半導体・製造装置":"◇","半導体・素材":"◇","製造・IoT":"⚙","半導体・インフラ":"◇","素材・光学":"◇","素材・部品":"◆","製造・部品":"⚙","素材・表面処理":"◆","電子部品・素材":"◇","医療・アパレル":"＋","電機・インフラ":"⚡","小売":"袋","食品・小売":"食","食品・ヘルスケア":"＋","食品":"食","ドラッグストア":"＋","人材":"人","人材・メディア":"人","人材・ヘルスケア":"人","設備・サービス":"⚙","研修・人材":"人","人材・クリエイティブ":"人","IT・デジタル":"IT","エンタメ・店舗":"★","M&A・金融":"¥","金融・IR":"¥","IT・SI":"IT","Cloud・IT":"☁","商社・包装":"箱","広告・人材":"AD"};
-function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function rand(a,b){return a+Math.random()*(b-a)} function pick(a){return a[Math.floor(Math.random()*a.length)]}
-function unsaved(){return SME_CATALOG.filter(c=>!saved.has(c.name))} function updateRemaining(){document.getElementById("remaining").textContent=unsaved().length}
-function spawnOre(){const pool=unsaved().filter(c=>!active.has(c.name));if(!pool.length)return;const c=pick(pool),el=document.createElement("button");el.className="ore";el.dataset.company=c.name;el.style.setProperty("--shape",pick(shapes));el.style.setProperty("--dur",`${rand(17,24).toFixed(2)}s`);el.style.top=`calc(55% - ${rand(62,82).toFixed(0)}px)`;el.innerHTML=`<span class="glyph">${esc(glyphs[c.industry]||"◇")}</span><span class="mini">${esc(c.displayName)}</span>`;el.addEventListener("click",e=>{e.preventDefault();openCompany(c)});el.addEventListener("animationend",()=>{active.delete(c.name);el.remove()});document.getElementById("oreLayer").appendChild(el);active.set(c.name,el)}
-function startLine(){for(let i=0;i<7;i++)setTimeout(spawnOre,i*650);spawnTimer=setInterval(spawnOre,1450);updateRemaining()}
-const conveyorVerifiedCache=new Map();
-function conveyorSourceLabel(t){return({official_site:"企業公式",official_recruit:"公式採用",official_ir:"公式IR",annual_securities_report:"有価証券報告書",integrated_report:"統合報告書",public_agency:"公的機関"})[t]||"公開情報"}
-function renderConveyorVerified(c,key){
-  const groups=window.VICompanyData?.group(c.__verifiedProfile)||[],g=groups.find(x=>x.key===key)||groups[0],box=document.getElementById("detail");
-  if(!g){box.innerHTML="";return}
-  box.innerHTML=g.points.map(p=>`<div class="fact"><label>${esc(p.label)}</label><div>${esc(p.display_value)}</div><a class="pill" href="${esc(p.source_url)}" target="_blank" rel="noopener">${esc(conveyorSourceLabel(p.source_type))} ↗</a></div>`).join("");
-  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===g.key));
-}
-function applyConveyorVerified(c,p){
-  c.__verifiedProfile=p;const groups=window.VICompanyData.group(p);if(!groups.length)return;
-  const vi=window.VICompanyData.point(p,"industry");if(vi)document.getElementById("dialogIndustry").textContent=vi.display_value;
-  const b=window.VICompanyData.point(p,"business_description");document.getElementById("dialogSummary").textContent=b?b.display_value:"";
-  const wanted=["base_salary","starting_salary","annual_holidays","employee_count","revenue"],snap=[];
-  wanted.forEach(k=>{const x=window.VICompanyData.point(p,k);if(x&&snap.length<4)snap.push(x)});
-  document.getElementById("snapshot").innerHTML=snap.map(x=>{
-    const isSalary=x.field_name==="base_salary"||x.field_name==="starting_salary";
-    return `<div class="snap ${isSalary?"salary-highlight":""}"><small>${esc(window.VICompanyData.fieldMeta[x.field_name]?.[1]||x.field_name)}</small><strong>${esc(x.display_value)}</strong><span>${esc(conveyorSourceLabel(x.source_type))}</span></div>`;
-  }).join("");
-  document.getElementById("tabs").innerHTML=groups.map((g,i)=>`<button class="tab ${i?"":"active"}" data-tab="${esc(g.key)}">${esc(g.label)}</button>`).join("");
-  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>renderConveyorVerified(c,b.dataset.tab)));
-  document.getElementById("sources").innerHTML=window.VICompanyData.uniqueSources(p).map(s=>`<a class="source" href="${esc(s.source_url)}" target="_blank" rel="noopener"><b>${esc(s.source_title||conveyorSourceLabel(s.source_type))}</b><br>${esc(conveyorSourceLabel(s.source_type))} · high ↗</a>`).join("");
-  renderConveyorVerified(c,groups[0].key);
-}
-async function loadConveyorVerified(c){
-  if(!window.VICompanyData)return;
-  try{
-    let p=conveyorVerifiedCache.get(c.name);
-    if(p===undefined){p=await window.VICompanyData.fetchVerifiedProfile(c.name);conveyorVerifiedCache.set(c.name,p||null)}
-    if(selected!==c)return;
-    if(p?.data_points?.length){applyConveyorVerified(c,p);return}
-    document.getElementById("dialogSummary").textContent="公開できる確認済みデータが現在登録されていません。";
-    document.getElementById("snapshot").innerHTML="";document.getElementById("tabs").innerHTML="";document.getElementById("detail").innerHTML="";document.getElementById("sources").innerHTML="";
-  }catch(e){
-    console.warn("verified SME profile load failed",e);
-    if(selected===c){document.getElementById("dialogSummary").textContent="確認済み企業データの読み込みに失敗しました。旧データにはフォールバックしません。";document.getElementById("snapshot").innerHTML="";document.getElementById("tabs").innerHTML="";document.getElementById("detail").innerHTML="";document.getElementById("sources").innerHTML="";}
-  }
-}
-const labels={compensation:"給与",benefits:"福利厚生",workstyle:"働き方・休日",career:"募集・キャリア"};
-function detailKeys(c){return ["compensation","benefits","workstyle","career"].filter(k=>c.details?.[k])}
-function renderDetail(c,key){if(c.__verifiedProfile){renderConveyorVerified(c,key);return}const sec=c.details?.[key];if(!sec)return;const box=document.getElementById("detail");box.innerHTML=`<p class="summary">${esc(sec.summary)}</p>`+(sec.facts||[]).map(r=>`<div class="fact"><label>${esc(r[0])}</label><div>${esc(r[1])}</div><span class="pill">${esc(r[2])}</span></div>`).join("");document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===key))}
-function openCompany(c){selected=c;c.__verifiedProfile=null;recordSmeInterest(c.industry,"open");document.getElementById("dialogOre").textContent=glyphs[c.industry]||"◇";document.getElementById("dialogIndustry").textContent=c.industry;document.getElementById("dialogName").textContent=c.displayName;document.getElementById("dialogSummary").textContent="確認済み公開情報を読み込んでいます…";document.getElementById("snapshot").innerHTML="";document.getElementById("tabs").innerHTML="";document.getElementById("detail").innerHTML="";document.getElementById("sources").innerHTML="";const btn=document.getElementById("saveBtn");btn.textContent=saved.has(c.name)?"保存済み":"図鑑に保存";btn.classList.toggle("saved",saved.has(c.name));document.getElementById("companyDialog").showModal();loadConveyorVerified(c);track("sme_company_opened",c)}
-document.getElementById("closeDialog").addEventListener("click",()=>document.getElementById("companyDialog").close());
-document.getElementById("saveBtn").addEventListener("click",()=>{if(!selected)return;if(saved.has(selected.name))return;saved.add(selected.name);recordSmeInterest(selected.industry,"save");localStorage.setItem(SAVED_KEY,JSON.stringify([...saved]));const el=active.get(selected.name);if(el){el.remove();active.delete(selected.name)};document.querySelectorAll(`.ore[data-company="${CSS.escape(selected.name)}"]`).forEach(x=>x.remove());document.getElementById("saveBtn").textContent="保存済み";document.getElementById("saveBtn").classList.add("saved");updateRemaining();track("sme_company_saved",selected)});
-const ANALYTICS_CONFIG={supabaseUrl:"https://ioznepuggdzagmckljbp.supabase.co",publishableKey:"sb_publishable_JAPUbLW_UTupYjKxmWFCXg_NicyJxn5"};const sessionId=localStorage.getItem("vi-analytics-session-v1");async function track(type,c){if(!sessionId)return;try{await fetch(`${ANALYTICS_CONFIG.supabaseUrl}/rest/v1/events`,{method:"POST",headers:{apikey:ANALYTICS_CONFIG.publishableKey,Authorization:`Bearer ${ANALYTICS_CONFIG.publishableKey}`,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify([{session_id:sessionId,event_type:type,industry:c?.industry||null,company:c?.displayName||null,x_position:null,depth_m:null,metadata:{source:"sme_conveyor"}}])})}catch(_){}}
-startLine();track("conveyor_viewed",null);
-</script></body></html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VENTURE INFO は移転しました</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://venfo.github.io/conveyor.html">
+<script>location.replace("https://venfo.github.io/conveyor.html" + location.search + location.hash);</script>
+<noscript><meta http-equiv="refresh" content="0; url=https://venfo.github.io/conveyor.html"></noscript>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#111;color:#f6efe0;font-family:system-ui,sans-serif;text-align:center}a{color:#e2b646}</style>
+</head>
+<body>
+<p>VENTURE INFO は移転しました。<br><a href="https://venfo.github.io/conveyor.html">https://venfo.github.io/conveyor.html</a></p>
+</body>
+</html>
